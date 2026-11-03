@@ -10,8 +10,8 @@ function icon(a){return `<button class="app" data-open="${a[0]}" aria-label="打
 $('#apps').innerHTML=appData.map(icon).join('');
 $('#dock').innerHTML=[dockData[0],dockData[1],appData[0],dockData[2]].map(icon).join('');
 $('#apps-second').innerHTML=[['微信'],['计算器'],['Fitness']].map(icon).join('');
-let timer,clockTimer;function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(timer);timer=setTimeout(()=>$('#toast').style.display='none',2300)}function home(){$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.remove('open');$('.home-indicator').style.color='white';clearInterval(clockTimer)}$('#home').onclick=home;$('#reset').onclick=home;document.addEventListener('keydown',e=>{if(e.key==='Escape'||((e.metaKey||e.ctrlKey)&&e.key==='h')){e.preventDefault();home()}});
-const names=['暮光紫','海盐蓝','落日粉','苔原绿'],walls=['radial-gradient(ellipse at 10% 0%,#d6cef2,transparent 48%),radial-gradient(ellipse at 94% 62%,#9c70c2,transparent 52%),linear-gradient(160deg,#9e9cd2,#aca2d8 45%,#6b5a9f)','linear-gradient(145deg,#a6d5dd,#83b4c5 40%,#3e7396)','linear-gradient(145deg,#f5d4bc,#e9b8b8 40%,#b67494)','linear-gradient(145deg,#c4d4b9,#9cbba9 40%,#56786c)'];function wallpaper(i){$('#wallpaper').style.background=walls[i];$('#wallpaper-name').textContent=names[i];document.querySelectorAll('.swatch').forEach((b,j)=>b.classList.toggle('active',i===j));storage.setItem('wallpaper',i)}document.querySelectorAll('[data-wall]').forEach(b=>b.onclick=()=>wallpaper(+b.dataset.wall));wallpaper(Math.max(0,Math.min(3,+storage.getItem('wallpaper')||0)));$('#brightness').oninput=e=>{$('#screen').style.filter=`brightness(${e.target.value}%)`;$('#brightness-value').textContent=e.target.value+'%'};function updateTime(){const d=new Date(),t=d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#clock').textContent=t;$('#lock-time').textContent=t;$('#lock-date').textContent=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});$('#widget-date').textContent=d.getDate();$('#widget-day').textContent=d.toLocaleDateString('zh-CN',{weekday:'long'})}updateTime();setInterval(updateTime,10000);$('#lock-button').onclick=()=>{$('#lock').classList.add('open');updateTime()};$('#unlock').onclick=home;
+let timer,clockTimer;function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(timer);timer=setTimeout(()=>$('#toast').style.display='none',2300)}function home(){if(typeof phoneLocked!=='undefined'&&phoneLocked){showPasscode();return}$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.remove('open');$('.home-indicator').style.color='white';clearInterval(clockTimer)}$('#home').onclick=home;$('#reset').onclick=home;document.addEventListener('keydown',e=>{if(e.key==='Escape'||((e.metaKey||e.ctrlKey)&&e.key==='h')){e.preventDefault();home()}});
+const names=['暮光紫','海盐蓝','落日粉','苔原绿'],walls=['radial-gradient(ellipse at 10% 0%,#d6cef2,transparent 48%),radial-gradient(ellipse at 94% 62%,#9c70c2,transparent 52%),linear-gradient(160deg,#9e9cd2,#aca2d8 45%,#6b5a9f)','linear-gradient(145deg,#a6d5dd,#83b4c5 40%,#3e7396)','linear-gradient(145deg,#f5d4bc,#e9b8b8 40%,#b67494)','linear-gradient(145deg,#c4d4b9,#9cbba9 40%,#56786c)'];function wallpaper(i){$('#wallpaper').style.background=walls[i];$('#wallpaper-name').textContent=names[i];document.querySelectorAll('.swatch').forEach((b,j)=>b.classList.toggle('active',i===j));storage.setItem('wallpaper',i)}document.querySelectorAll('[data-wall]').forEach(b=>b.onclick=()=>wallpaper(+b.dataset.wall));wallpaper(Math.max(0,Math.min(3,+storage.getItem('wallpaper')||0)));$('#brightness').oninput=e=>{$('#screen').style.filter=`brightness(${e.target.value}%)`;$('#brightness-value').textContent=e.target.value+'%'};function updateTime(){const d=new Date(),t=d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');$('#lock-time').textContent=t;$('#lock-date').textContent=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});$('#widget-date').textContent=d.getDate();$('#widget-day').textContent=d.toLocaleDateString('zh-CN',{weekday:'long'})}updateTime();setInterval(updateTime,10000);$('#lock-button').onclick=lockPhone;$('#unlock').onclick=showPasscode;
 const view=$('#app-view');function layout(name,html){home();view.scrollTop=0;$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
 function baseOpenApp(name){switch(name){case '备忘录':layout(name,'<p style="font-size:11px;color:#9d91a6">随手记录，自动保存在此浏览器</p><textarea id="note" placeholder="今天有什么新想法？"></textarea>');$('#note').value=storage.getItem('note')||'';$('#note').oninput=e=>storage.setItem('note',e.target.value);break;
 case '计算器':layout(name,'<div class="calc-display" id="display">0</div><div class="calc-grid">'+['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','⌫','0','.','='].map(x=>`<button data-key="${x}">${x}</button>`).join('')+'</div>');initCalc();break;
@@ -108,7 +108,7 @@ function legacySettings() {
 }
 function updateSignals() {
   const airplane = storage.getItem('airplane') === 'true';
-  $('.signals').innerHTML = `<span aria-label="${airplane ? '飞行模式' : '蜂窝信号'}">${airplane ? '✈' : '▂▄▆'}</span><svg aria-label="Wi-Fi" width="14" height="12" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M1 4 Q10 -2 19 4 M4 8 Q10 3 16 8 M7 11 Q10 8 13 11"/><circle cx="10" cy="14" r="1" fill="currentColor" stroke="none"/></svg><span class="battery" aria-label="电池电量 85%"></span>`;
+  $('.signals').innerHTML = (airplane?'<span class="status-airplane" aria-label="飞行模式">✈</span>':'<svg class="status-cellular" aria-label="蜂窝信号" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx=".7"/><rect x="5" y="5.5" width="3" height="6.5" rx=".7"/><rect x="10" y="3" width="3" height="9" rx=".7"/><rect x="15" y="0" width="3" height="12" rx=".7"/></svg>')+'<svg class="status-wifi" aria-label="Wi-Fi" viewBox="0 0 20 15" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M1 4q9-7 18 0M4.5 8q5.5-4.5 11 0M8 11.3q2-1.5 4 0"/><circle cx="10" cy="13.5" r="1" fill="currentColor" stroke="none"/></svg><svg class="status-battery" aria-label="电量86%" viewBox="0 0 28 13" fill="none"><rect x=".7" y=".7" width="23" height="11.6" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1.3"/><rect x="2.4" y="2.4" width="18" height="8.2" rx="1.5" fill="currentColor"/><path d="M25.4 4v5q2-1 2-2.5T25.4 4" fill="currentColor" fill-opacity=".55"/></svg>';
 }
 updateSignals();
 function openApp(name) {
@@ -146,7 +146,7 @@ openApp = function(name) {
 };
 
 // 手机窄屏布局也可以点击灵动岛锁屏。
-$('#island-lock').onclick = () => { $('#lock').classList.add('open'); updateTime(); };
+$('#island-lock').onclick = lockPhone;
 
 // 使用内嵌矢量绘制 iOS 风格图标，避免字体或 emoji 在不同电脑上变化。
 function classicIosIcon(name) {
@@ -312,7 +312,7 @@ let readContacts=readJSON('message-read',[]);if(!Array.isArray(readContacts))rea
 let messagesFilterUnread=false;
 function messageTime(at){const d=new Date(at);return Number.isNaN(d.getTime())?'现在':d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}
 function showMessageList(){
-  layout('信息','<div class="messages-actions"><button id="messages-edit">编辑</button><button id="messages-filter" aria-label="筛选信息">☰</button></div><h1 class="messages-title">信息</h1><div class="thread-list" id="thread-list"></div><div class="messages-bottom"><label class="messages-search"><span>⌕</span><input id="messages-search" aria-label="搜索信息" placeholder="搜索"></label><button id="messages-compose" aria-label="新建信息"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5H5v15h15v-8M10 14l1-4L20 1l3 3-9 9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button></div>');
+  layout('信息','<div class="messages-actions"><button id="messages-edit">编辑</button><button id="messages-filter" aria-label="筛选信息">☰</button></div><h1 class="messages-title">Messages</h1><div class="thread-list" id="thread-list"></div><div class="messages-bottom"><label class="messages-search"><span>⌕</span><input id="messages-search" aria-label="搜索信息" placeholder="搜索"></label><button id="messages-compose" aria-label="新建信息"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5H5v15h15v-8M10 14l1-4L20 1l3 3-9 9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button></div>');
   view.dataset.app='信息列表';let editing=false;
   function render(){
     const q=$('#messages-search').value.trim().toLowerCase();$('#thread-list').replaceChildren();
@@ -443,7 +443,7 @@ const openBeforeNativeApps=openApp;
 openApp=function(name){view.classList.remove('wechat-app');if(name==='信息')return showMessageList();if(name==='时钟')return showClockTab('世界时钟');if(name==='照片')return showPhotoLibrary();openBeforeNativeApps(name)};
 
 // 重新绘制关键系统图标：保留图标的可访问名称和原有点击入口。
-function iosIcon(name){
+function detailedLegacyIcon(name){
   const uid='native-icon-'+(iosIcon.serial=(iosIcon.serial||0)+1);
   const gradient=(id,top,bottom)=>`<linearGradient id="${uid}-${id}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>`;
   const shell=(top,bottom,body,defs='')=>`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${gradient('bg',top,bottom)}${defs}</defs><rect width="64" height="64" rx="14" fill="url(#${uid}-bg)"/>${body}</svg>`;
@@ -466,3 +466,79 @@ function iosIcon(name){
   // 保留其它图标的熟悉轮廓，同时统一光泽与边缘。
   return old.replace('</svg>','<path d="M14 .5h36Q63.5.5 63.5 14" fill="none" stroke="white" stroke-opacity=".3" stroke-width=".8"/></svg>');
 }
+
+// 锁屏密码仅用于本地模拟，不作为真实设备安全机制。
+let phoneLocked=false,passcodeValue='',passcodePending=false,passcodeTimeout=null;
+function lockInert(locked){for(const selector of ['#home-pages','#dock','.dots','#app-view'])$(selector).inert=locked;$('#home').setAttribute('aria-label',locked?'上滑输入锁屏密码':'返回主屏幕')}
+function lockPhone(){
+  document.querySelectorAll('.locked-camera').forEach(el=>el.remove());
+  clearTimeout(passcodeTimeout);phoneLocked=true;passcodeValue='';passcodePending=false;clearInterval(clockTimer);
+  $('#screen').classList.add('phone-locked');$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.add('open');$('#lock-face').hidden=false;$('#passcode-panel').hidden=true;$('#lock').classList.remove('showing-passcode','lock-camera-open');$('#home').style.color='white';lockInert(true);updateTime();
+}
+function showPasscode(){if(!phoneLocked)return;document.querySelectorAll('.locked-camera').forEach(el=>el.remove());$('#lock-face').hidden=true;$('#passcode-panel').hidden=false;$('#lock').classList.add('showing-passcode');passcodeValue='';passcodePending=false;clearTimeout(passcodeTimeout);$('#passcode-status').textContent='输入四位密码以解锁';renderPasscode()}
+function renderPasscode(){document.querySelectorAll('#passcode-dots span').forEach((dot,i)=>dot.classList.toggle('filled',i<passcodeValue.length));$('#passcode-dots').setAttribute('aria-label','已输入'+passcodeValue.length+'位密码')}
+function enterPasscode(digit){
+  if(!phoneLocked||$('#passcode-panel').hidden||passcodePending||passcodeValue.length>=4)return;
+  passcodeValue+=digit;renderPasscode();
+  if(passcodeValue.length===4){passcodePending=true;passcodeTimeout=setTimeout(()=>{
+    if(passcodeValue==='1228'){phoneLocked=false;passcodeValue='';passcodePending=false;$('#screen').classList.remove('phone-locked');$('#lock').classList.remove('open','showing-passcode');$('#passcode-panel').hidden=true;lockInert(false);home()}
+    else{passcodeValue='';passcodePending=false;$('#passcode-status').textContent='密码不正确，请重试';$('#passcode-dots').classList.remove('wrong');void $('#passcode-dots').offsetWidth;$('#passcode-dots').classList.add('wrong');renderPasscode()}
+  },180)}
+}
+$('#passcode-keypad').innerHTML=[1,2,3,4,5,6,7,8,9,'',0,''].map(n=>n===''?'<span></span>':`<button data-passcode="${n}" aria-label="密码数字${n}"><b>${n}</b><small>${({2:'ABC',3:'DEF',4:'GHI',5:'JKL',6:'MNO',7:'PQRS',8:'TUV',9:'WXYZ'})[n]||' '}</small></button>`).join('');
+document.querySelectorAll('[data-passcode]').forEach(b=>b.onclick=()=>enterPasscode(b.dataset.passcode));
+$('#passcode-delete').onclick=()=>{if(!passcodePending){passcodeValue=passcodeValue.slice(0,-1);renderPasscode()}};
+$('#passcode-cancel').onclick=()=>{clearTimeout(passcodeTimeout);passcodePending=false;passcodeValue='';$('#passcode-panel').hidden=true;$('#lock-face').hidden=false;$('#lock').classList.remove('showing-passcode')};
+document.addEventListener('keydown',e=>{if(!phoneLocked||$('#passcode-panel').hidden)return;if(/^\d$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();enterPasscode(e.key)}else if(e.key==='Backspace'){e.preventDefault();e.stopImmediatePropagation();$('#passcode-delete').click()}else if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();$('#passcode-cancel').click()}},true);
+$('#lock-flashlight').onclick=()=>{const on=$('#lock-flashlight').getAttribute('aria-pressed')!=='true';$('#lock-flashlight').setAttribute('aria-pressed',String(on));$('#lock-flashlight').classList.toggle('on',on);$('#lock').classList.toggle('flashlight-on',on)};
+$('#lock-camera').onclick=()=>{
+  const overlay=document.createElement('div');overlay.className='locked-camera';overlay.innerHTML='<button class="locked-camera-close" aria-label="返回锁屏">‹ 返回锁屏</button><div class="locked-camera-preview">相机预览<small>锁屏模拟拍照 · 不访问相册</small></div><button class="shutter" aria-label="锁屏拍照"></button>';
+  $('#lock').append(overlay);overlay.querySelector('.locked-camera-close').onclick=()=>overlay.remove();overlay.querySelector('.shutter').onclick=()=>{overlay.classList.add('capture-flash');setTimeout(()=>overlay.classList.remove('capture-flash'),160)};
+};
+
+// 底部上滑返回。桌面支持鼠标拖动；触屏保留应用内部正常纵向滚动。
+let homeSwipe=null,swipeConsumed=false;
+const phoneScreen=$('#screen');
+phoneScreen.addEventListener('pointerdown',e=>{
+  swipeConsumed=false;homeSwipe=null;
+  if(e.button&&e.button!==0)return;
+  const rect=phoneScreen.getBoundingClientRect(),fromBottom=e.clientY>rect.bottom-42;
+  const isControl=e.target.closest('button,input,textarea,select,a');
+  if(phoneLocked){if($('#passcode-panel').hidden&&!isControl)homeSwipe={x:e.clientX,y:e.clientY,bottom:true,locked:true,pointer:e.pointerId};return}
+  if(fromBottom||(!e.target.closest('input,textarea,select,a')&&e.pointerType==='mouse'&&!e.target.closest('.native-chat-history,.message-history,.library-grid,.library-search,.photos'))){homeSwipe={x:e.clientX,y:e.clientY,bottom:fromBottom,locked:false,pointer:e.pointerId}}
+},{capture:true});
+phoneScreen.addEventListener('pointermove',e=>{if(!homeSwipe||homeSwipe.pointer!==e.pointerId)return;const dy=homeSwipe.y-e.clientY,dx=Math.abs(homeSwipe.x-e.clientX);if(dy>55&&dy>dx*1.4){if(homeSwipe.locked){if(phoneLocked)showPasscode()}else if(!phoneLocked)home();homeSwipe=null;swipeConsumed=e.pointerType==='mouse';setTimeout(()=>swipeConsumed=false,350);if(e.cancelable)e.preventDefault()}},{capture:true});
+window.addEventListener('pointerup',()=>homeSwipe=null);window.addEventListener('pointercancel',()=>homeSwipe=null);
+phoneScreen.addEventListener('click',e=>{if(swipeConsumed){e.preventDefault();e.stopPropagation()}},true);
+// 启动时展示锁屏。上滑或点击提示后输入 1228。
+lockPhone();
+
+// 参考图四的经典 iOS 默认图标：纯净形状、渐变底色与统一圆角。
+function iosIcon(name){
+ const id='ios-classic-'+(iosIcon.serial=(iosIcon.serial||0)+1);
+ const gradient=(key,a,b)=>`<linearGradient id="${id}-${key}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+ const draw=(a,b,body,defs='')=>`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${gradient('bg',a,b)}${defs}</defs><rect width="64" height="64" rx="14" fill="url(#${id}-bg)"/>${body}</svg>`;
+ if(name==='信息')return draw('#65e775','#23c948','<path fill="#fff" d="M54 30c0 11-10 19-22 19-4 0-7-.5-10-2l-11 4 3-10c-3-3-5-7-5-11 0-11 10-19 23-19s22 8 22 19z"/>');
+ if(name==='电话')return draw('#61e873','#22c74b','<path fill="#fff" d="M18 11c-4 0-8 6-7 12 3 15 16 28 30 30 6 1 12-3 12-7l-2-6-11-5-5 6c-7-3-12-8-15-15l6-5-5-10z"/>');
+ if(name==='相机')return draw('#e0e0e2','#aaaab0','<path d="M9 20h12l4-6h14l4 6h12v30H9z" fill="#353538"/><rect x="11" y="22" width="42" height="26" rx="3" fill="#3f3f42"/><circle cx="32" cy="35" r="13" fill="#9d9da2"/><circle cx="32" cy="35" r="10.5" fill="#1c1d23"/><circle cx="32" cy="35" r="7.3" fill="#28384e"/><circle cx="32" cy="35" r="4.2" fill="#17202d"/><ellipse cx="29" cy="32" rx="2.5" ry="1.5" fill="#688cb7"/><circle cx="48" cy="25" r="2" fill="#f2d879"/><rect x="13" y="16" width="7" height="3" rx="1" fill="#737378"/>');
+ if(name==='照片')return draw('#fff','#fff',Array.from({length:8},(_,i)=>`<ellipse cx="32" cy="19" rx="8.2" ry="13" fill="${['#ffbe2d','#ff8b26','#f35c75','#b975ce','#7e8ede','#70c5d7','#82cd82','#dadc4a'][i]}" fill-opacity=".8" transform="rotate(${i*45} 32 32)"/>`).join(''));
+ if(name==='备忘录')return draw('#fff','#f9f9f9',`<path d="M14 0h36q14 0 14 14v5H0v-5Q0 0 14 0" fill="url(#${id}-yellow)"/><path d="M0 21h64" stroke="#c6c6ca" stroke-width="1" stroke-dasharray="1.4 1.4"/><path d="M9 33h46M9 43h46M9 53h46" stroke="#c6c6ca" stroke-width="1"/>`,gradient('yellow','#ffe35d','#ffcc31'));
+ if(name==='健康')return draw('#fff','#fff',`<path d="M40 34L29 24C18 13 33 6 40 15c7-9 22-2 11 9z" fill="url(#${id}-heart)"/>`,gradient('heart','#f64784','#ed3048'));
+ if(name==='钱包')return draw('#242426','#151517','<rect x="10" y="12" width="44" height="30" rx="4" fill="#c5c6c8"/><rect x="12" y="15" width="40" height="23" rx="2" fill="#5baccb"/><rect x="12" y="20" width="40" height="23" rx="2" fill="#f4bd45"/><rect x="12" y="25" width="40" height="23" rx="2" fill="#ed7351"/><rect x="10" y="33" width="44" height="21" rx="4" fill="#c7c2b7"/><path d="M10 33h12l4 5h12l4-5h12" fill="none" stroke="#f2dfc4" stroke-width="1.5"/>');
+ if(name==='地图')return draw('#e6ecd8','#d8e6cc','<path d="M39 0v64" stroke="#8dcae4" stroke-width="22"/><path d="M-4 47L65 12" stroke="white" stroke-width="17"/><path d="M-4 47L65 12" stroke="#fbd56a" stroke-width="8"/><path d="M14 0v64" stroke="white" stroke-width="10"/><path d="M14 0v64" stroke="#b5c2b1" stroke-width="1"/><rect x="5" y="7" width="23" height="15" rx="4" fill="#377bd4" stroke="white" stroke-width="1"/><path d="M6 11h21" stroke="#ee5456" stroke-width="2"/><text x="16.5" y="19" text-anchor="middle" font-family="Arial" font-size="8" font-weight="700" fill="white">280</text><path d="M38 29L26 56l12-5 12 5z" fill="#267df5" stroke="white" stroke-width="2"/>');
+ if(name==='Safari')return draw('#fff','#fff',`<circle cx="32" cy="32" r="27.5" fill="url(#${id}-blue)"/>`+Array.from({length:60},(_,i)=>`<path d="M32 6v${i%5===0?4.5:2.5}" transform="rotate(${i*6} 32 32)" stroke="white" stroke-width="${i%5===0?1.1:.6}"/>`).join('')+'<path d="M45 15L36 36 19 49l9-21z" fill="white"/><path d="M45 15L36 36l-8-8z" fill="#f1414c"/>',gradient('blue','#46c4ed','#0079de'));
+ if(name==='音乐')return draw('#ff5c78','#fa244b','<path fill="white" d="M27 18v25c-12-3-18 11-6 12 6 0 10-4 10-9V28l17-4v15c-12-2-17 11-6 12 7 0 10-4 10-9V12z"/>');
+ if(name==='天气')return draw('#219af1','#0879de','<circle cx="24" cy="23" r="12.5" fill="#ffd538"/><path d="M13 48a10 10 0 010-20 14 14 0 0125-4 12 12 0 1110 24z" fill="white"/>');
+ if(name==='时钟')return detailedLegacyIcon(name);
+ if(name==='设置'){
+  const teeth=Array.from({length:112},(_,i)=>{const a=i/112*Math.PI*2,r=(i%4===0||i%4===3)?24:26;return `${32+r*Math.cos(a)},${32+r*Math.sin(a)}`}).join(' ');
+  return draw('#c7c7cc','#8d8e94',`<circle cx="32" cy="32" r="28.5" fill="#55575b"/><polygon points="${teeth}" fill="url(#${id}-metal)"/><circle cx="32" cy="32" r="20" fill="#5c5d61" stroke="#bdbdc1" stroke-width="1.5"/><circle cx="32" cy="32" r="15.2" fill="#9a9ba1"/>`+Array.from({length:6},(_,i)=>`<path d="M30 18l2 14 4-14" fill="#dedee1" transform="rotate(${i*60} 32 32)"/>`).join('')+'<circle cx="32" cy="32" r="6" fill="#5b5c62" stroke="#e0e0e3" stroke-width="1.2"/>',gradient('metal','#ededf0','#b0b0b6'));
+ }
+ return detailedLegacyIcon(name);
+}
+// 部分触屏浏览器在一次上滑之后会省略首个 click，密码键使用 touch pointerup 直接响应。
+document.querySelectorAll('#passcode-keypad button,#passcode-cancel,#passcode-delete').forEach(button=>{
+ const activate=button.onclick;let lastTouch=-Infinity;
+ button.addEventListener('pointerup',event=>{if(event.pointerType==='touch'){event.preventDefault();lastTouch=performance.now();activate.call(button,event)}});
+ button.onclick=event=>{if(event.detail!==0&&performance.now()-lastTouch<500)return;activate.call(button,event)};
+});
