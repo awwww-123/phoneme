@@ -12,7 +12,7 @@ $('#dock').innerHTML=[dockData[0],dockData[1],appData[0],dockData[2]].map(icon).
 $('#apps-second').innerHTML=[['微信'],['计算器'],['Fitness']].map(icon).join('');
 let timer,clockTimer;function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(timer);timer=setTimeout(()=>$('#toast').style.display='none',2300)}function home(){$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.remove('open');$('.home-indicator').style.color='white';clearInterval(clockTimer)}$('#home').onclick=home;$('#reset').onclick=home;document.addEventListener('keydown',e=>{if(e.key==='Escape'||((e.metaKey||e.ctrlKey)&&e.key==='h')){e.preventDefault();home()}});
 const names=['暮光紫','海盐蓝','落日粉','苔原绿'],walls=['radial-gradient(ellipse at 10% 0%,#d6cef2,transparent 48%),radial-gradient(ellipse at 94% 62%,#9c70c2,transparent 52%),linear-gradient(160deg,#9e9cd2,#aca2d8 45%,#6b5a9f)','linear-gradient(145deg,#a6d5dd,#83b4c5 40%,#3e7396)','linear-gradient(145deg,#f5d4bc,#e9b8b8 40%,#b67494)','linear-gradient(145deg,#c4d4b9,#9cbba9 40%,#56786c)'];function wallpaper(i){$('#wallpaper').style.background=walls[i];$('#wallpaper-name').textContent=names[i];document.querySelectorAll('.swatch').forEach((b,j)=>b.classList.toggle('active',i===j));storage.setItem('wallpaper',i)}document.querySelectorAll('[data-wall]').forEach(b=>b.onclick=()=>wallpaper(+b.dataset.wall));wallpaper(Math.max(0,Math.min(3,+storage.getItem('wallpaper')||0)));$('#brightness').oninput=e=>{$('#screen').style.filter=`brightness(${e.target.value}%)`;$('#brightness-value').textContent=e.target.value+'%'};function updateTime(){const d=new Date(),t=d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#clock').textContent=t;$('#lock-time').textContent=t;$('#lock-date').textContent=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});$('#widget-date').textContent=d.getDate();$('#widget-day').textContent=d.toLocaleDateString('zh-CN',{weekday:'long'})}updateTime();setInterval(updateTime,10000);$('#lock-button').onclick=()=>{$('#lock').classList.add('open');updateTime()};$('#unlock').onclick=home;
-const view=$('#app-view');function layout(name,html){home();$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
+const view=$('#app-view');function layout(name,html){home();view.scrollTop=0;$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
 function baseOpenApp(name){switch(name){case '备忘录':layout(name,'<p style="font-size:11px;color:#9d91a6">随手记录，自动保存在此浏览器</p><textarea id="note" placeholder="今天有什么新想法？"></textarea>');$('#note').value=storage.getItem('note')||'';$('#note').oninput=e=>storage.setItem('note',e.target.value);break;
 case '计算器':layout(name,'<div class="calc-display" id="display">0</div><div class="calc-grid">'+['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','⌫','0','.','='].map(x=>`<button data-key="${x}">${x}</button>`).join('')+'</div>');initCalc();break;
 case '天气':layout(name,'<div style="text-align:center;background:linear-gradient(#7297c3,#b4c6df);border-radius:20px;color:white;padding:30px 10px"><div>北京市</div><div style="font-size:75px">23°</div><div>☀ 晴朗</div><small>最高 26° · 最低 17°</small></div><div class="content-card">适合散步的好天气<br><small style="color:#aaa">模拟天气数据</small><div style="display:flex;justify-content:space-between;margin-top:20px">'+['现在 ☀ 23°','15时 ☀ 25°','16时 ☀ 24°'].map(x=>`<span style="font-size:11px">${x}</span>`).join('')+'</div></div>');break;
@@ -90,12 +90,7 @@ function editNote(id) {
   $('#note').oninput = e => { note.text = e.target.value; saveNotes(); $('#save-state').textContent = '已自动保存'; };
   $('#notes-back').onclick = showNotes; $('#note').focus();
 }
-function showMessages() {
-  layout('信息', '<div class="conversation"><div class="conversation-title">文件传输助手 <span>模拟聊天</span></div><div id="messages" class="message-history" aria-live="polite"><p class="bubble received">欢迎来到你的小世界！有什么想记录或分享的吗？✨</p><p class="bubble received">可以在下面输入消息，点击发送。</p></div><form id="message-form" class="message-form"><input id="message" aria-label="输入消息" placeholder="输入消息…" maxlength="2000" autocomplete="off"><button class="primary" type="submit">发送</button></form></div>');
-  function append(text) { const bubble = document.createElement('p'); bubble.className = 'bubble sent'; bubble.textContent = text; $('#messages').append(bubble); $('#messages').scrollTop = $('#messages').scrollHeight; }
-  messages.forEach(append);
-  $('#message-form').onsubmit = e => { e.preventDefault(); const text = $('#message').value.trim(); if (!text) return; messages.push(text); storage.setItem('messages-v1', JSON.stringify(messages)); append(text); $('#message').value = ''; $('#message').focus(); };
-}
+function showMessages() { showMessageList(); }
 function legacySettings() {
   layout('设置', '<div class="content-card"><label for="device-name">手机名称</label><div class="name-form"><input id="device-name" maxlength="30" aria-label="手机名称"><button class="primary" id="save-name">保存</button></div></div><div class="content-card"><div class="list-row"><span>深色模式</span><button class="toggle" id="dark-toggle" aria-label="深色模式" aria-pressed="false"></button></div><div class="list-row"><span>飞行模式</span><button class="toggle" id="airplane-toggle" aria-label="飞行模式" aria-pressed="false"></button></div><div class="list-row"><span>蓝牙</span><button class="toggle" id="bluetooth-toggle" aria-label="蓝牙" aria-pressed="false"></button></div></div><div class="content-card"><div>预设壁纸</div><div id="settings-wallpapers" class="wallpaper-options"></div><p class="muted" id="selected-wallpaper"></p></div><div class="content-card muted">iPhone 模拟器 · 第一版<br>设置会保存在当前浏览器中。</div>');
   $('#device-name').value = deviceName();
@@ -154,7 +149,7 @@ openApp = function(name) {
 $('#island-lock').onclick = () => { $('#lock').classList.add('open'); updateTime(); };
 
 // 使用内嵌矢量绘制 iOS 风格图标，避免字体或 emoji 在不同电脑上变化。
-function iosIcon(name) {
+function classicIosIcon(name) {
   const svg = body => `<svg viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
   const bg = color => `<rect width="64" height="64" rx="14" fill="${color}"/>`;
   const bubble = '<path fill="white" d="M53 29c0 11-10 19-22 19-3 0-6-.5-8-1.5L12 51l3-10C4 26 14 11 32 11c12 0 21 8 21 18z"/>';
@@ -292,3 +287,182 @@ function showFitness(date=fitnessDate()){
 }
 const openBeforeFitness=openApp;
 openApp=function(name){if(name==='Fitness'){view.classList.remove('wechat-app');return showFitness()}openBeforeFitness(name)};
+
+// 信息：每位联系人都有独立记录。旧版本已发送的消息迁入文件传输助手。
+const messageContacts = [
+  {id:'a',name:'小A',initial:'A',color:'#b5a5e3',unread:true,lines:[['in','今天下班要不要一起去吃火锅？'],['out','好呀！还是上次那家吗？'],['in','对，我订了六点半的位置，到了给我发消息～']]},
+  {id:'honey',name:'哈尼',initial:'♡',color:'#efa9b9',unread:true,lines:[['in','早上好，记得吃早餐哦 ☀️'],['out','吃过啦，今天带了你买的面包。'],['in','我晚上买菜，想吃番茄炒蛋还是咖喱？'],['out','咖喱！我下班顺路买水果。'],['in','好，那我等你回家一起吃饭 ❤️']]},
+  {id:'mom',name:'妈妈',initial:'妈',color:'#e6ae83',lines:[['in','这几天降温，出门多穿一件衣服。'],['out','知道啦，今天穿了外套。你们也注意保暖！'],['in','周末有空就回来吃饭，给你做好吃的。']]},
+  {id:'weekend',name:'周末出游',initial:'☀',color:'#8bbeb0',lines:[['in','周六去公园怎么样？天气预报说是晴天。'],['out','可以呀，我带点零食。'],['in','那就十点在地铁站见！']]},
+  {id:'assistant',name:'文件传输助手',initial:'▤',color:'#85b1dd',lines:[['in','可以在这里保存临时文字。消息只会保存在当前浏览器。']]}
+];
+let messageThreads = readJSON('message-threads-v2', {});
+if(!messageThreads || typeof messageThreads!=='object' || Array.isArray(messageThreads))messageThreads={};
+messageContacts.forEach((contact,index)=>{
+  if(!Array.isArray(messageThreads[contact.id])) {
+    messageThreads[contact.id]=contact.lines.map(([direction,text],i)=>({direction,text,at:new Date(Date.now()-(index*3600+contact.lines.length*120-i*120)*1000).toISOString()}));
+    if(contact.id==='assistant')messages.forEach(text=>messageThreads.assistant.push({direction:'out',text,at:new Date().toISOString()}));
+  }
+  messageThreads[contact.id]=messageThreads[contact.id].filter(m=>m&&typeof m.text==='string'&&['in','out'].includes(m.direction));
+});
+const saveMessageThreads=()=>storage.setItem('message-threads-v2',JSON.stringify(messageThreads));
+saveMessageThreads();
+let pinnedContacts=readJSON('message-pins',[]);if(!Array.isArray(pinnedContacts))pinnedContacts=[];
+let readContacts=readJSON('message-read',[]);if(!Array.isArray(readContacts))readContacts=[];
+let messagesFilterUnread=false;
+function messageTime(at){const d=new Date(at);return Number.isNaN(d.getTime())?'现在':d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}
+function showMessageList(){
+  layout('信息','<div class="messages-actions"><button id="messages-edit">编辑</button><button id="messages-filter" aria-label="筛选信息">☰</button></div><h1 class="messages-title">信息</h1><div class="thread-list" id="thread-list"></div><div class="messages-bottom"><label class="messages-search"><span>⌕</span><input id="messages-search" aria-label="搜索信息" placeholder="搜索"></label><button id="messages-compose" aria-label="新建信息"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5H5v15h15v-8M10 14l1-4L20 1l3 3-9 9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button></div>');
+  view.dataset.app='信息列表';let editing=false;
+  function render(){
+    const q=$('#messages-search').value.trim().toLowerCase();$('#thread-list').replaceChildren();
+    const sorted=[...messageContacts].sort((a,b)=>Number(pinnedContacts.includes(b.id))-Number(pinnedContacts.includes(a.id)));
+    for(const c of sorted){const history=messageThreads[c.id],last=history.at(-1),unread=c.unread&&!readContacts.includes(c.id);if(messagesFilterUnread&&!unread)continue;if(q&&!c.name.toLowerCase().includes(q)&&!history.some(m=>m.text.toLowerCase().includes(q)))continue;
+      const row=document.createElement('button');row.className='message-thread';row.dataset.thread=c.id;row.setAttribute('aria-label','打开与'+c.name+'的聊天');
+      const dot=document.createElement('span');dot.className='unread-dot'+(unread?' visible':'');
+      const avatar=document.createElement('span');avatar.className='contact-avatar';avatar.style.background=c.color;avatar.textContent=c.initial;
+      const summary=document.createElement('span');summary.className='thread-summary';
+      const heading=document.createElement('span');heading.className='thread-heading';
+      const name=document.createElement('b');name.textContent=(pinnedContacts.includes(c.id)?'⌖ ':'')+c.name;
+      const time=document.createElement('small');time.textContent=editing?(pinnedContacts.includes(c.id)?'取消置顶':'置顶'):messageTime(last?.at);
+      heading.append(name,time);const snippet=document.createElement('span');snippet.className='thread-snippet';snippet.textContent=last?.text||'暂无消息';summary.append(heading,snippet);
+      const arrow=document.createElement('span');arrow.className='thread-arrow';arrow.textContent='›';row.append(dot,avatar,summary,arrow);
+      row.onclick=()=>{if(editing){pinnedContacts=pinnedContacts.includes(c.id)?pinnedContacts.filter(id=>id!==c.id):[...pinnedContacts,c.id];storage.setItem('message-pins',JSON.stringify(pinnedContacts));render()}else showMessageChat(c.id)};
+      $('#thread-list').append(row);
+    }
+    if(!$('#thread-list').children.length)$('#thread-list').innerHTML='<p class="messages-empty">没有符合条件的信息</p>';
+    $('#messages-filter').classList.toggle('is-active',messagesFilterUnread);$('#messages-filter').setAttribute('aria-label',messagesFilterUnread?'显示所有信息':'仅显示未读信息');
+  }
+  render();$('#messages-search').oninput=render;
+  $('#messages-edit').onclick=()=>{editing=!editing;$('#messages-edit').textContent=editing?'完成':'编辑';render()};
+  $('#messages-filter').onclick=()=>{messagesFilterUnread=!messagesFilterUnread;render()};
+  $('#messages-compose').onclick=()=>{messagesFilterUnread=false;showMessageRecipients()};
+}
+function showMessageRecipients(){
+  layout('新信息','<p class="muted">选择收件人</p><div id="message-recipients" class="ios-group"></div>');view.dataset.app='信息';$('#back').textContent='‹ 信息';$('#back').onclick=showMessageList;
+  messageContacts.forEach(c=>{const b=document.createElement('button');b.className='ios-row';b.textContent=c.name+'  ›';b.onclick=()=>showMessageChat(c.id);$('#message-recipients').append(b)});
+}
+function showMessageChat(id){
+  const c=messageContacts.find(c=>c.id===id);if(!c)return showMessageList();
+  if(!readContacts.includes(id)){readContacts.push(id);storage.setItem('message-read',JSON.stringify(readContacts))}
+  layout(c.name,'<div class="chat-contact-header"><span class="contact-avatar" id="chat-avatar"></span><b id="chat-name"></b><span>›</span></div><p class="chat-date">iMessage · 本地模拟</p><div id="messages" class="native-chat-history" aria-live="polite"></div><form id="message-form" class="native-message-form"><span class="message-plus" aria-hidden="true">＋</span><input id="message" aria-label="输入消息" placeholder="iMessage" maxlength="2000" autocomplete="off"><button type="submit" aria-label="发送信息">↑</button></form>');
+  view.dataset.app='信息聊天';$('#back').textContent='‹ 信息';$('#back').onclick=showMessageList;
+  $('#chat-avatar').textContent=c.initial;$('#chat-avatar').style.background=c.color;$('#chat-name').textContent=c.name;
+  function append(m){const p=document.createElement('p');p.className='bubble '+(m.direction==='out'?'sent':'received');p.textContent=m.text;$('#messages').append(p)}
+  messageThreads[id].forEach(append);$('#messages').scrollTop=$('#messages').scrollHeight;
+  $('#message-form').onsubmit=e=>{e.preventDefault();const text=$('#message').value.trim();if(!text)return;const m={direction:'out',text,at:new Date().toISOString()};messageThreads[id].push(m);saveMessageThreads();append(m);$('#messages').scrollTop=$('#messages').scrollHeight;$('#message').value='';$('#message').focus()};
+}
+
+// 世界时钟使用 IANA 时区，浏览器自动处理夏令时和日期跨越。
+const worldCities=[{id:'beijing',name:'北京',zone:'Asia/Shanghai'},{id:'chicago',name:'芝加哥',zone:'America/Chicago'},{id:'newyork',name:'纽约',zone:'America/New_York'},{id:'pittsburgh',name:'匹兹堡',zone:'America/New_York'},{id:'xiamen',name:'厦门',zone:'Asia/Shanghai'},{id:'london',name:'伦敦',zone:'Europe/London'}];
+let cityOrder=readJSON('world-clock-order',worldCities.map(c=>c.id));if(!Array.isArray(cityOrder))cityOrder=[];cityOrder=[...new Set([...cityOrder,...worldCities.map(c=>c.id)])].filter(id=>worldCities.some(c=>c.id===id));
+let clock24=storage.getItem('world-clock-24')!=='false';let clockTab='世界时钟';
+function zonedClock(zone,now=new Date()){
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now);
+  const get=t=>parts.find(p=>p.type===t)?.value;return {hour:+get('hour'),minute:get('minute'),second:get('second'),day:Math.floor(Date.UTC(+get('year'),+get('month')-1,+get('day'))/86400000),offset:(Date.UTC(+get('year'),+get('month')-1,+get('day'),+get('hour'),+get('minute'),+get('second'))-Math.floor(now.getTime()/1000)*1000)/3600000};
+}
+function clockShell(tab,html){
+  layout(tab,html+'<nav class="clock-tabs" aria-label="时钟导航">'+['世界时钟','闹钟','秒表','计时器'].map((name,i)=>`<button data-clock-tab="${name}" class="${tab===name?'selected':''}"><span>${['◎','◷','◴','◶'][i]}</span>${name}</button>`).join('')+'</nav>');view.dataset.app='时钟';document.querySelectorAll('[data-clock-tab]').forEach(b=>b.onclick=()=>showClockTab(b.dataset.clockTab));
+}
+function showWorldClock(){
+  clockTab='世界时钟';clockShell('世界时钟','<div class="clock-actions"><button id="clock-edit">编辑</button><button id="clock-format" aria-label="切换12或24小时制">'+(clock24?'24小时':'12小时')+'</button></div><h1 class="clock-title">世界时钟</h1><div id="world-clock-list"></div>');
+  let edit=false;
+  function tick(){
+    const now=new Date(),localZone=Intl.DateTimeFormat().resolvedOptions().timeZone,local=zonedClock(localZone,now);const list=$('#world-clock-list');if(!list)return;list.replaceChildren();
+    cityOrder.forEach((id,index)=>{const c=worldCities.find(c=>c.id===id),z=zonedClock(c.zone,now),dayDelta=z.day-local.day,diff=z.offset-local.offset;
+      const row=document.createElement('div');row.className='world-clock-row';row.dataset.city=c.id;
+      const left=document.createElement('div');const detail=document.createElement('small');detail.textContent=(dayDelta===0?'今天':dayDelta===1?'明天':dayDelta===-1?'昨天':dayDelta>0?'之后':'之前')+'，'+(diff>=0?'+':'')+Number(diff.toFixed(2))+' 小时';const name=document.createElement('b');name.textContent=c.name;left.append(detail,name);
+      const right=document.createElement('div');right.className='world-time';right.dataset.zone=c.zone;const digits=document.createElement('span');digits.textContent=(clock24?String(z.hour).padStart(2,'0'):String(z.hour%12||12))+':'+z.minute;right.append(digits);if(!clock24){const period=document.createElement('small');period.textContent=z.hour>=12?'PM':'AM';right.append(period)}
+      row.append(left,right);
+      if(edit){const up=document.createElement('button');up.className='clock-reorder';up.textContent='↑';up.setAttribute('aria-label','上移'+c.name);up.disabled=index===0;up.onclick=()=>{[cityOrder[index-1],cityOrder[index]]=[cityOrder[index],cityOrder[index-1]];storage.setItem('world-clock-order',JSON.stringify(cityOrder));tick()};row.append(up)}list.append(row);
+    });
+  }
+  tick();clockTimer=setInterval(tick,1000);$('#clock-format').onclick=()=>{clock24=!clock24;storage.setItem('world-clock-24',String(clock24));$('#clock-format').textContent=clock24?'24小时':'12小时';tick()};$('#clock-edit').onclick=()=>{edit=!edit;$('#clock-edit').textContent=edit?'完成':'编辑';tick()};
+}
+let stopwatchStart=null,stopwatchElapsed=0,timerEnd=null,timerRemaining=0;
+function showClockTab(tab){
+  clockTab=tab;if(tab==='世界时钟')return showWorldClock();
+  if(tab==='闹钟'){
+    let alarms=readJSON('simulator-alarms',[]);if(!Array.isArray(alarms))alarms=[];
+    clockShell(tab,'<h1 class="clock-title">闹钟</h1><p class="clock-hint">模拟闹钟列表，不在后台响铃</p><form id="alarm-form" class="alarm-form"><input id="alarm-time" type="time" value="07:30" aria-label="闹钟时间" required><button type="submit">添加</button></form><div id="alarm-list"></div>');
+    const save=()=>storage.setItem('simulator-alarms',JSON.stringify(alarms));
+    function render(){const list=$('#alarm-list');list.replaceChildren();alarms.forEach((a,i)=>{const row=document.createElement('div');row.className='alarm-row';const t=document.createElement('span');t.textContent=a.time;const toggle=document.createElement('button');toggle.className='toggle'+(a.on?' on':'');toggle.setAttribute('aria-label','切换'+a.time+'闹钟');toggle.setAttribute('aria-pressed',String(a.on));toggle.onclick=()=>{a.on=!a.on;save();render()};const del=document.createElement('button');del.textContent='删除';del.className='alarm-delete';del.onclick=()=>{alarms.splice(i,1);save();render()};row.append(t,toggle,del);list.append(row)});if(!alarms.length)list.innerHTML='<p class="clock-hint">没有闹钟</p>'}render();$('#alarm-form').onsubmit=e=>{e.preventDefault();alarms.push({time:$('#alarm-time').value,on:true});save();render()};
+  }else if(tab==='秒表'){
+    clockShell(tab,'<h1 class="clock-title">秒表</h1><div class="stopwatch-digits" id="stopwatch-display"></div><div class="stopwatch-actions"><button id="stopwatch-reset">复位</button><button id="stopwatch-start"></button></div>');
+    const tick=()=>{const ms=stopwatchElapsed+(stopwatchStart?Date.now()-stopwatchStart:0);$('#stopwatch-display').textContent=String(Math.floor(ms/60000)).padStart(2,'0')+':'+String(Math.floor(ms/1000)%60).padStart(2,'0')+'.'+String(Math.floor(ms/10)%100).padStart(2,'0');$('#stopwatch-start').textContent=stopwatchStart?'停止':'启动'};tick();clockTimer=setInterval(tick,50);$('#stopwatch-start').onclick=()=>{if(stopwatchStart){stopwatchElapsed+=Date.now()-stopwatchStart;stopwatchStart=null}else stopwatchStart=Date.now();tick()};$('#stopwatch-reset').onclick=()=>{stopwatchElapsed=0;stopwatchStart=null;tick()};
+  }else{
+    clockShell(tab,'<h1 class="clock-title">计时器</h1><label class="timer-input">时长（分钟）<input id="timer-minutes" type="number" value="5" min="1" max="180" step="1"></label><div class="stopwatch-digits" id="timer-display"></div><div class="stopwatch-actions"><button id="timer-reset">取消</button><button id="timer-start"></button></div>');
+    function tick(){if(timerEnd){timerRemaining=Math.max(0,timerEnd-Date.now());if(!timerRemaining){timerEnd=null;toast('计时结束')}}const seconds=Math.ceil(timerRemaining/1000);$('#timer-display').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');$('#timer-start').textContent=timerEnd?'暂停':timerRemaining?'继续':'开始';$('#timer-minutes').disabled=!!timerEnd}
+    tick();clockTimer=setInterval(tick,200);$('#timer-start').onclick=()=>{if(timerEnd){timerRemaining=Math.max(0,timerEnd-Date.now());timerEnd=null}else{if(!timerRemaining){const minutes=+$('#timer-minutes').value;if(!Number.isInteger(minutes)||minutes<1||minutes>180)return toast('请输入 1–180 分钟');timerRemaining=minutes*60000}timerEnd=Date.now()+timerRemaining}tick()};$('#timer-reset').onclick=()=>{timerEnd=null;timerRemaining=0;tick()};
+  }
+}
+
+// 照片图库：三列照片墙、年月浏览、搜索、收藏、选择和大图预览。
+const demoPhotos=[
+  ['绿丘与蓝天','春日草地'],['雪山湖泊','山间旅行'],['金色沙丘','沙漠日落'],['薰衣草花田','夏日花园'],['森林晨光','林间散步'],['海边石拱','海岸假期'],['极光雪夜','冬日夜空'],['秋日湖畔','秋天树叶'],['山谷瀑布','溪流森林'],['雏菊草地','晴天花朵'],['海岸暮色','蓝色时刻'],['高山碧湖','湖畔松林']
+].map(([title,subtitle],i)=>({id:'landscape-'+i,title,subtitle,tile:i,date:`${new Date().getFullYear()}-${String([4,2,6,7,5,8,1,10,9,4,8,6][i]).padStart(2,'0')}-${String(10+i).padStart(2,'0')}`}));
+let favoritePhotos=readJSON('photo-favorites',[]);if(!Array.isArray(favoritePhotos))favoritePhotos=[];
+let photoMode='全部',photoOnlyFavorites=false,photoSelecting=false,photoSearch='',selectedPhotos=new Set();
+function atlasStyle(photo){return `background-image:url('assets/landscapes.png');background-size:300% 400%;background-position:${photo.tile%3*50}% ${Math.floor(photo.tile/3)*100/3}%`}
+function filteredPhotos(){return demoPhotos.filter(p=>(!photoOnlyFavorites||favoritePhotos.includes(p.id))&&(!photoSearch||(p.title+p.subtitle+p.date).includes(photoSearch)))}
+function showPhotoLibrary(){
+  layout('图库','<div class="library-header"><div><h1>图库</h1><p id="library-caption"></p></div><button id="photo-filter" aria-label="切换全部或收藏照片">☰</button><button id="photo-select">'+(photoSelecting?'完成':'选择')+'</button></div><label class="library-search" id="library-search" hidden><input id="photo-query" placeholder="搜索照片、季节或日期" aria-label="搜索照片"></label><div class="library-grid" id="library-grid"></div><div class="library-count" id="library-count"></div><div class="photo-selection-actions" id="photo-selection-actions" hidden><span id="photo-selection-count"></span><button id="favorite-selection">收藏所选</button></div><nav class="library-bottom" aria-label="照片浏览"><button id="photo-library-home" aria-label="所有照片">▧</button><div class="library-segments">'+['年','月','全部'].map(t=>`<button data-photo-mode="${t}" class="${photoMode===t?'selected':''}">${t}</button>`).join('')+'</div><button id="photo-search-button" aria-label="搜索图库"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M15 15l7 7"/></svg></button></nav>');view.dataset.app='照片图库';
+  $('#library-caption').textContent=photoOnlyFavorites?'个人收藏':new Date().getFullYear()+' 年 · 风景精选';$('#photo-filter').classList.toggle('is-active',photoOnlyFavorites);
+  $('#photo-query').value=photoSearch;if(photoSearch)$('#library-search').hidden=false;
+  function selectionState(){$('#photo-selection-actions').hidden=!photoSelecting;$('#photo-selection-count').textContent='已选 '+selectedPhotos.size+' 张';$('#favorite-selection').disabled=!selectedPhotos.size}
+  function tile(photo,large=false){
+    const b=document.createElement('button');b.className='library-photo'+(large?' album-cover':'');b.dataset.photo=photo.id;b.setAttribute('aria-label',photo.title);b.style.cssText=atlasStyle(photo);
+    if(favoritePhotos.includes(photo.id)){const heart=document.createElement('span');heart.className='photo-favorite-mark';heart.textContent='♥';b.append(heart)}
+    if(photoSelecting){const tick=document.createElement('span');tick.className='photo-select-mark'+(selectedPhotos.has(photo.id)?' checked':'');tick.textContent=selectedPhotos.has(photo.id)?'✓':'';b.append(tick);b.setAttribute('aria-pressed',String(selectedPhotos.has(photo.id)))}
+    b.onclick=()=>{if(photoSelecting){selectedPhotos.has(photo.id)?selectedPhotos.delete(photo.id):selectedPhotos.add(photo.id);render()}else showPhotoViewer(photo.id)};return b;
+  }
+  function render(){const list=filteredPhotos(),grid=$('#library-grid');grid.replaceChildren();grid.classList.toggle('album-mode',photoMode!=='全部');
+    if(photoMode==='全部')list.forEach(photo=>grid.append(tile(photo)));
+    else {const grouped=new Map();list.forEach(photo=>{const key=photoMode==='年'?photo.date.slice(0,4):photo.date.slice(0,7);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(photo)});[...grouped].sort((a,b)=>b[0].localeCompare(a[0])).forEach(([key,photos])=>{const item=document.createElement('section');item.className='photo-album';const cover=tile(photos[0],true);const label=document.createElement('span');label.className='album-label';label.textContent=key.replace('-',' 年 ')+' · '+photos.length+' 张';cover.append(label);cover.onclick=()=>{photoMode='全部';photoSearch=key;showPhotoLibrary()};item.append(cover);grid.append(item)})}
+    $('#library-count').textContent=list.length?list.length+' 张照片 · 示例图库':'没有匹配的照片';selectionState();
+  }
+  render();$('#photo-select').onclick=()=>{photoSelecting=!photoSelecting;selectedPhotos.clear();showPhotoLibrary()};$('#photo-filter').onclick=()=>{photoOnlyFavorites=!photoOnlyFavorites;showPhotoLibrary()};
+  $('#photo-search-button').onclick=()=>{$('#library-search').hidden=!$('#library-search').hidden;if(!$('#library-search').hidden)$('#photo-query').focus();else{photoSearch='';$('#photo-query').value='';render()}};
+  $('#photo-query').oninput=e=>{photoSearch=e.target.value.trim();render()};
+  document.querySelectorAll('[data-photo-mode]').forEach(b=>b.onclick=()=>{photoMode=b.dataset.photoMode;photoSelecting=false;selectedPhotos.clear();showPhotoLibrary()});
+  $('#photo-library-home').onclick=()=>{photoMode='全部';photoSearch='';photoOnlyFavorites=false;photoSelecting=false;selectedPhotos.clear();showPhotoLibrary()};
+  $('#favorite-selection').onclick=()=>{favoritePhotos=[...new Set([...favoritePhotos,...selectedPhotos])];storage.setItem('photo-favorites',JSON.stringify(favoritePhotos));photoSelecting=false;selectedPhotos.clear();showPhotoLibrary();toast('已加入个人收藏')};
+}
+function showPhotoViewer(id){
+  const libraryScroll=view.scrollTop;view.scrollTop=0;
+  const list=filteredPhotos();let index=list.findIndex(p=>p.id===id);if(index<0)return;
+  const overlay=document.createElement('div');overlay.className='native-photo-viewer';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','照片预览');
+  overlay.innerHTML='<div class="photo-viewer-top"><button id="photo-viewer-close" aria-label="关闭照片">‹ 图库</button><div><b id="photo-viewer-title"></b><small id="photo-viewer-date"></small></div></div><div class="photo-viewer-image" id="photo-viewer-image" role="img"></div><div class="photo-viewer-actions"><button id="photo-previous" aria-label="上一张照片">‹</button><button id="photo-like" aria-label="收藏照片">♡</button><button id="photo-zoom" aria-label="放大照片">⊕</button><button id="photo-next" aria-label="下一张照片">›</button></div>';
+  view.append(overlay);let zoom=false;
+  function render(){const photo=list[index];$('#photo-viewer-title').textContent=photo.title;$('#photo-viewer-date').textContent=photo.date;$('#photo-viewer-image').style.cssText=atlasStyle(photo);$('#photo-viewer-image').setAttribute('aria-label',photo.title);$('#photo-like').textContent=favoritePhotos.includes(photo.id)?'♥':'♡';$('#photo-like').setAttribute('aria-pressed',String(favoritePhotos.includes(photo.id)));$('#photo-previous').disabled=index===0;$('#photo-next').disabled=index===list.length-1;zoom=false;$('#photo-viewer-image').classList.remove('zoomed');$('#photo-zoom').setAttribute('aria-pressed','false')}
+  $('#photo-viewer-close').onclick=()=>{overlay.remove();showPhotoLibrary();view.scrollTop=libraryScroll};$('#photo-previous').onclick=()=>{if(index>0){index--;render()}};$('#photo-next').onclick=()=>{if(index<list.length-1){index++;render()}};
+  $('#photo-like').onclick=()=>{const photo=list[index];favoritePhotos=favoritePhotos.includes(photo.id)?favoritePhotos.filter(id=>id!==photo.id):[...favoritePhotos,photo.id];storage.setItem('photo-favorites',JSON.stringify(favoritePhotos));$('#photo-like').textContent=favoritePhotos.includes(photo.id)?'♥':'♡';$('#photo-like').setAttribute('aria-pressed',String(favoritePhotos.includes(photo.id)))};
+  $('#photo-zoom').onclick=()=>{zoom=!zoom;$('#photo-viewer-image').classList.toggle('zoomed',zoom);$('#photo-zoom').setAttribute('aria-pressed',String(zoom))};render();$('#photo-viewer-close').focus();
+}
+const openBeforeNativeApps=openApp;
+openApp=function(name){view.classList.remove('wechat-app');if(name==='信息')return showMessageList();if(name==='时钟')return showClockTab('世界时钟');if(name==='照片')return showPhotoLibrary();openBeforeNativeApps(name)};
+
+// 重新绘制关键系统图标：保留图标的可访问名称和原有点击入口。
+function iosIcon(name){
+  const uid='native-icon-'+(iosIcon.serial=(iosIcon.serial||0)+1);
+  const gradient=(id,top,bottom)=>`<linearGradient id="${uid}-${id}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>`;
+  const shell=(top,bottom,body,defs='')=>`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${gradient('bg',top,bottom)}${defs}</defs><rect width="64" height="64" rx="14" fill="url(#${uid}-bg)"/>${body}</svg>`;
+  if(name==='信息')return shell('#79eb77','#28c944','<path d="M54 30c0 11-10 19-22 19-4 0-7-.5-10-2l-11 4 3-10c-3-3-5-7-5-11 0-11 10-19 23-19s22 8 22 19z" fill="white"/>');
+  if(name==='时钟'){
+    const marks=Array.from({length:60},(_,i)=>`<path d="M32 4v${i%5===0?5:2.5}" transform="rotate(${i*6} 32 32)" stroke="${i%5===0?'#444':'#9b9b9b'}" stroke-width="${i%5===0?1.15:.6}"/>`).join('');
+    const nums=Array.from({length:12},(_,i)=>{const n=i+1,a=(n*30-90)*Math.PI/180;return `<text x="${32+20*Math.cos(a)}" y="${34.8+20*Math.sin(a)}" text-anchor="middle" font-family="Arial" font-size="7.5" fill="#151515">${n}</text>`}).join('');
+    return shell('#fff','#f8f8f8',marks+nums+'<path d="M32 32l-10-4M32 32l17-6" fill="none" stroke="#171717" stroke-width="2" stroke-linecap="round"/><path d="M17 33l32-3" stroke="#f4a029" stroke-width=".9"/><circle cx="32" cy="32" r="1.8" fill="#171717"/>');
+  }
+  if(name==='设置'){
+    const points=[];for(let i=0;i<96;i++){const a=i/96*Math.PI*2;const r=i%4===0||i%4===3?23:26;points.push(`${32+Math.cos(a)*r},${32+Math.sin(a)*r}`)}
+    const spokes=Array.from({length:6},(_,i)=>`<path d="M30 18l2 14 4-14" fill="#d6d8dc" transform="rotate(${i*60} 32 32)"/>`).join('');
+    return shell('#bcbec3','#747780',`<circle cx="32" cy="32" r="28" fill="#70737a" stroke="#d7d9df" stroke-width=".6"/><polygon points="${points.join(' ')}" fill="url(#${uid}-gear)" stroke="#f2f3f5" stroke-width=".35"/><circle cx="32" cy="32" r="19" fill="#5b5e66" stroke="#c9ccd2" stroke-width="1.2"/><circle cx="32" cy="32" r="14" fill="#8d9099"/>${spokes}<circle cx="32" cy="32" r="6.3" fill="#5d6069" stroke="#eee" stroke-width="1.1"/>`,gradient('gear','#f0f1f4','#a7aab1'));
+  }
+  if(name==='相机')return shell('#d7d9df','#a8abb3',`<path fill="#585b64" d="M12 15h9l4-5h15l4 5h8c3 0 4 2 4 5v31H8V20c0-3 1-5 4-5z"/><circle cx="32" cy="34" r="23" fill="#252833" stroke="#7b7e8c" stroke-width="2"/><circle cx="32" cy="34" r="18" fill="url(#${uid}-lens)" stroke="#11141b" stroke-width="2.5"/><circle cx="32" cy="34" r="11" fill="#121827" stroke="#50557e"/><ellipse cx="27" cy="26" rx="6" ry="4" fill="#739df1" opacity=".8" transform="rotate(-25 27 26)"/><ellipse cx="37" cy="42" rx="5" ry="3" fill="#59428f" opacity=".8"/><circle cx="50" cy="20" r="2" fill="#f4d9a9"/>`,`<radialGradient id="${uid}-lens"><stop stop-color="#254972"/><stop offset=".45" stop-color="#24334f"/><stop offset=".7" stop-color="#696b9e"/><stop offset="1" stop-color="#1a1d2c"/></radialGradient>`);
+  if(name==='照片')return shell('#fff','#fafafa',Array.from({length:8},(_,i)=>`<ellipse cx="32" cy="19.5" rx="8" ry="13" transform="rotate(${i*45} 32 32)" fill="${['#ffa72b','#ffd432','#99cf48','#40bf9d','#4aace0','#777ad9','#c15dc3','#f06489'][i]}" fill-opacity=".78"/>`).join(''));
+  if(name==='备忘录')return shell('#fff','#f5f5f5','<path d="M0 14Q0 0 14 0h36q14 0 14 14v5H0z" fill="url(#'+uid+'-yellow)"/><path d="M0 21h64" stroke="#c5c5c5" stroke-dasharray="1.5 1.5" stroke-width="1"/><path d="M9 33h46M9 44h46M9 55h46" stroke="#bfc0c2" stroke-width="1.1"/>',gradient('yellow','#ffe76a','#f8cd30'));
+  if(name==='健康')return shell('#fff','#f6f6f7',`<path d="M32 45L19 33C3 18 24 8 32 21c8-13 29-3 13 12z" fill="url(#${uid}-heart)"/>`,gradient('heart','#ed3c91','#ef2f39'));
+  let old=classicIosIcon(name);
+  // 保留其它图标的熟悉轮廓，同时统一光泽与边缘。
+  return old.replace('</svg>','<path d="M14 .5h36Q63.5.5 63.5 14" fill="none" stroke="white" stroke-opacity=".3" stroke-width=".8"/></svg>');
+}
