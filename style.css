@@ -47,3 +47,44 @@
 .enlarged-photo { width:100%;height:400px;border-radius:16px;font-size:100px;display:grid;place-items:center; }
 @media(prefers-reduced-motion:reduce) { *,*:before,*:after { animation:none!important;transition:none!important; } }
 .enlarged-photo { background-size:cover!important;background-position:center!important; }
+/* 只保留手机，移除网页品牌和宣传内容。 */
+body { background:radial-gradient(ellipse at 50% 32%,#e7e9ef,#cbd0da); }
+.page { min-height:100dvh;padding:24px;display:grid;place-items:center; }
+.workspace { display:block;padding:0; }
+.phone-wrap { margin:auto; }
+[hidden] { display:none!important; }
+.home-pages { display:flex;position:absolute;top:56px;bottom:140px;left:0;right:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x; }
+.home-pages::-webkit-scrollbar { display:none; }
+.home-page { flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;padding:12px 20px; }
+.home-page:nth-child(2) { padding-top:17px; }
+.home-pages .app { user-select:none;-webkit-user-select:none; }
+.ios-icon { background:none!important;padding:0!important;color:inherit!important;border-radius:13px; }
+.ios-icon svg { width:100%;height:100%;display:block;pointer-events:none; }
+.app-label { white-space:nowrap; }
+.dock .app-label { display:none; }
+.dots { display:flex;justify-content:center;gap:9px;align-items:center;height:20px;z-index:2;letter-spacing:0; }
+.page-dot { width:6px;height:6px;border-radius:50%;background:#ffffff60;padding:0;position:relative; }
+.page-dot:before { content:'';position:absolute;inset:-8px; }
+.page-dot.active { background:white; }
+.wechat-app { padding-bottom:85px; }
+.wechat-tabs { display:flex;position:absolute;bottom:22px;left:0;right:0;background:var(--card-bg);border-top:1px solid #8882;padding:7px 0; }
+.wechat-tabs button { flex:1;background:none;color:var(--muted);font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px; }
+.wechat-tabs button span { font-size:24px;line-height:26px; }
+.wechat-tabs button.selected { color:#07b75b; }
+.wx-caption { color:var(--muted);font-size:11px; }
+.wx-contact { display:flex;align-items:center;gap:10px;width:100%;background:var(--card-bg);color:var(--text);padding:14px 10px;border-radius:10px;text-align:left; }
+.wx-avatar { width:43px;height:43px;flex-shrink:0; }
+.wx-avatar svg { width:100%;height:100%;border-radius:10px; }
+.wx-contact b { font-size:12px; }
+.wx-contact small { display:block;color:var(--muted);font-size:10px;margin-top:6px;max-width:135px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.wx-time { margin-left:auto;align-self:flex-start;color:var(--muted);font-size:9px; }
+.wx-history { height:355px;background:var(--app-bg);padding:14px 0; }
+.wechat-app .sent { background:#95ec69;color:#162512; }
+.wx-send { background:#07c160;color:white;border-radius:6px;padding:8px 13px;flex-shrink:0; }
+.wx-discover { width:100%;background:var(--card-bg);padding:18px;color:var(--text);display:flex;gap:13px;border-radius:10px;align-items:center; }
+.wx-discover span { flex:1;text-align:left; }
+.wx-profile { display:flex;align-items:center;gap:12px; }
+.profile-avatar { display:grid;place-items:center;border-radius:10px;background:#91d5b3;color:white;font-size:33px;width:50px;height:50px; }
+.moment-image { height:190px;background-size:cover;background-position:center;border-radius:8px; }
+@media(max-width:680px){.page{padding:20px 8px}.workspace{padding:0}.phone-wrap{margin:0}.phone{width:338px;height:696px}}
+@media(max-width:355px){.phone{width:310px;height:660px}.home-page{padding-left:15px;padding-right:15px}.apps{gap:17px 10px}.widget{height:124px}.wx-history{height:320px}}
