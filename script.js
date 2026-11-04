@@ -9,10 +9,10 @@ const $=s=>document.querySelector(s);const appData=[['信息','▰','green'],['�
 function icon(a){return `<button class="app" data-open="${a[0]}" aria-label="打开${a[0]}"><span class="icon ios-icon">${iosIcon(a[0])}</span><span class="app-label">${a[0]}</span></button>`}
 $('#apps').innerHTML=appData.map(icon).join('');
 $('#dock').innerHTML=[dockData[0],dockData[1],appData[0],dockData[2]].map(icon).join('');
-$('#apps-second').innerHTML=[['微信'],['计算器'],['Fitness']].map(icon).join('');
+$('#apps-second').innerHTML=[['微信'],['计算器'],['Fitness'],['Google Maps'],['Gmail'],['Instagram'],['Weibo']].map(icon).join('');
 let timer,clockTimer;function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(timer);timer=setTimeout(()=>$('#toast').style.display='none',2300)}function home(){if(typeof phoneLocked!=='undefined'&&phoneLocked){showPasscode();return}$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.remove('open');$('.home-indicator').style.color='white';clearInterval(clockTimer)}$('#home').onclick=home;$('#reset').onclick=home;document.addEventListener('keydown',e=>{if(e.key==='Escape'||((e.metaKey||e.ctrlKey)&&e.key==='h')){e.preventDefault();home()}});
-const names=['暮光紫','海盐蓝','落日粉','苔原绿'],walls=['radial-gradient(ellipse at 10% 0%,#d6cef2,transparent 48%),radial-gradient(ellipse at 94% 62%,#9c70c2,transparent 52%),linear-gradient(160deg,#9e9cd2,#aca2d8 45%,#6b5a9f)','linear-gradient(145deg,#a6d5dd,#83b4c5 40%,#3e7396)','linear-gradient(145deg,#f5d4bc,#e9b8b8 40%,#b67494)','linear-gradient(145deg,#c4d4b9,#9cbba9 40%,#56786c)'];function wallpaper(i){$('#wallpaper').style.background=walls[i];$('#wallpaper-name').textContent=names[i];document.querySelectorAll('.swatch').forEach((b,j)=>b.classList.toggle('active',i===j));storage.setItem('wallpaper',i)}document.querySelectorAll('[data-wall]').forEach(b=>b.onclick=()=>wallpaper(+b.dataset.wall));wallpaper(Math.max(0,Math.min(3,+storage.getItem('wallpaper')||0)));$('#brightness').oninput=e=>{$('#screen').style.filter=`brightness(${e.target.value}%)`;$('#brightness-value').textContent=e.target.value+'%'};function updateTime(){const d=new Date(),t=d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');$('#lock-time').textContent=t;$('#lock-date').textContent=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});$('#widget-date').textContent=d.getDate();$('#widget-day').textContent=d.toLocaleDateString('zh-CN',{weekday:'long'})}updateTime();setInterval(updateTime,10000);$('#lock-button').onclick=lockPhone;$('#unlock').onclick=showPasscode;
-const view=$('#app-view');function layout(name,html){home();view.scrollTop=0;$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
+const names=['暮光紫','海盐蓝','落日粉','苔原绿'],walls=['radial-gradient(ellipse at 10% 0%,#d6cef2,transparent 48%),radial-gradient(ellipse at 94% 62%,#9c70c2,transparent 52%),linear-gradient(160deg,#9e9cd2,#aca2d8 45%,#6b5a9f)','linear-gradient(145deg,#a6d5dd,#83b4c5 40%,#3e7396)','linear-gradient(145deg,#f5d4bc,#e9b8b8 40%,#b67494)','linear-gradient(145deg,#c4d4b9,#9cbba9 40%,#56786c)'];function wallpaper(i){$('#wallpaper').style.background=walls[i];$('#wallpaper-name').textContent=names[i];document.querySelectorAll('.swatch').forEach((b,j)=>b.classList.toggle('active',i===j));storage.setItem('wallpaper',i)}document.querySelectorAll('[data-wall]').forEach(b=>b.onclick=()=>wallpaper(+b.dataset.wall));wallpaper(Math.max(0,Math.min(3,+storage.getItem('wallpaper')||0)));$('#brightness').oninput=e=>{$('#screen').style.filter=`brightness(${e.target.value}%)`;$('#brightness-value').textContent=e.target.value+'%'};function updateTime(){const d=new Date(),t=d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');$('#lock-time').textContent=t;$('#lock-date').textContent=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});if($('#widget-date'))$('#widget-date').textContent=d.getDate();if($('#widget-day'))$('#widget-day').textContent=d.toLocaleDateString('zh-CN',{weekday:'long'})}updateTime();setInterval(updateTime,10000);$('#lock-button').onclick=lockPhone;$('#unlock').onclick=showPasscode;
+const view=$('#app-view');function layout(name,html){home();delete view.dataset.clockMode;view.scrollTop=0;$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
 function baseOpenApp(name){switch(name){case '备忘录':layout(name,'<p style="font-size:11px;color:#9d91a6">随手记录，自动保存在此浏览器</p><textarea id="note" placeholder="今天有什么新想法？"></textarea>');$('#note').value=storage.getItem('note')||'';$('#note').oninput=e=>storage.setItem('note',e.target.value);break;
 case '计算器':layout(name,'<div class="calc-display" id="display">0</div><div class="calc-grid">'+['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','⌫','0','.','='].map(x=>`<button data-key="${x}">${x}</button>`).join('')+'</div>');initCalc();break;
 case '天气':layout(name,'<div style="text-align:center;background:linear-gradient(#7297c3,#b4c6df);border-radius:20px;color:white;padding:30px 10px"><div>北京市</div><div style="font-size:75px">23°</div><div>☀ 晴朗</div><small>最高 26° · 最低 17°</small></div><div class="content-card">适合散步的好天气<br><small style="color:#aaa">模拟天气数据</small><div style="display:flex;justify-content:space-between;margin-top:20px">'+['现在 ☀ 23°','15时 ☀ 25°','16时 ☀ 24°'].map(x=>`<span style="font-size:11px">${x}</span>`).join('')+'</div></div>');break;
@@ -362,10 +362,10 @@ function zonedClock(zone,now=new Date()){
   const get=t=>parts.find(p=>p.type===t)?.value;return {hour:+get('hour'),minute:get('minute'),second:get('second'),day:Math.floor(Date.UTC(+get('year'),+get('month')-1,+get('day'))/86400000),offset:(Date.UTC(+get('year'),+get('month')-1,+get('day'),+get('hour'),+get('minute'),+get('second'))-Math.floor(now.getTime()/1000)*1000)/3600000};
 }
 function clockShell(tab,html){
-  layout(tab,html+'<nav class="clock-tabs" aria-label="时钟导航">'+['世界时钟','闹钟','秒表','计时器'].map((name,i)=>`<button data-clock-tab="${name}" class="${tab===name?'selected':''}"><span>${['◎','◷','◴','◶'][i]}</span>${name}</button>`).join('')+'</nav>');view.dataset.app='时钟';document.querySelectorAll('[data-clock-tab]').forEach(b=>b.onclick=()=>showClockTab(b.dataset.clockTab));
+  layout(tab,'<div class="clock-content">'+html+'</div><nav class="clock-tabs" aria-label="时钟导航">'+['世界时钟','闹钟','秒表','计时器'].map((name,i)=>`<button data-clock-tab="${name}" class="${tab===name?'selected':''}"><span>${clockTabSymbol(i)}</span>${['World Clock','Alarms','Stopwatch','Timers'][i]}</button>`).join('')+'</nav>');view.dataset.app='时钟';view.dataset.clockMode=tab;document.querySelectorAll('.clock-tabs [data-clock-tab]').forEach(b=>b.onclick=()=>showClockTab(b.dataset.clockTab));
 }
 function showWorldClock(){
-  clockTab='世界时钟';clockShell('世界时钟','<div class="clock-actions"><button id="clock-edit">编辑</button><button id="clock-format" aria-label="切换12或24小时制">'+(clock24?'24小时':'12小时')+'</button></div><h1 class="clock-title">世界时钟</h1><div id="world-clock-list"></div>');
+  clockTab='世界时钟';clockShell('世界时钟','<div class="clock-actions"><button id="clock-edit">编辑</button><button id="clock-format" aria-label="切换12或24小时制">'+(clock24?'24小时':'12小时')+'</button></div><h1 class="clock-title">World Clock</h1><div id="world-clock-list"></div>');
   let edit=false;
   function tick(){
     const now=new Date(),localZone=Intl.DateTimeFormat().resolvedOptions().timeZone,local=zonedClock(localZone,now);const list=$('#world-clock-list');if(!list)return;list.replaceChildren();
@@ -384,14 +384,14 @@ function showClockTab(tab){
   clockTab=tab;if(tab==='世界时钟')return showWorldClock();
   if(tab==='闹钟'){
     let alarms=readJSON('simulator-alarms',[]);if(!Array.isArray(alarms))alarms=[];
-    clockShell(tab,'<h1 class="clock-title">闹钟</h1><p class="clock-hint">模拟闹钟列表，不在后台响铃</p><form id="alarm-form" class="alarm-form"><input id="alarm-time" type="time" value="07:30" aria-label="闹钟时间" required><button type="submit">添加</button></form><div id="alarm-list"></div>');
+    clockShell(tab,'<h1 class="clock-title">Alarms</h1><section class="sleep-schedule"><h3>▰ Sleep | Wake Up</h3><div><span id="sleep-time"></span><button id="sleep-change">CHANGE</button></div><small>Tomorrow Morning · 模拟睡眠计划</small></section><h3 class="alarm-other">Other</h3><p class="clock-hint">模拟闹钟列表，不在后台响铃</p><form id="alarm-form" class="alarm-form"><input id="alarm-time" type="time" value="07:30" aria-label="闹钟时间" required><button type="submit">添加</button></form><div id="alarm-list"></div>');
     const save=()=>storage.setItem('simulator-alarms',JSON.stringify(alarms));
     function render(){const list=$('#alarm-list');list.replaceChildren();alarms.forEach((a,i)=>{const row=document.createElement('div');row.className='alarm-row';const t=document.createElement('span');t.textContent=a.time;const toggle=document.createElement('button');toggle.className='toggle'+(a.on?' on':'');toggle.setAttribute('aria-label','切换'+a.time+'闹钟');toggle.setAttribute('aria-pressed',String(a.on));toggle.onclick=()=>{a.on=!a.on;save();render()};const del=document.createElement('button');del.textContent='删除';del.className='alarm-delete';del.onclick=()=>{alarms.splice(i,1);save();render()};row.append(t,toggle,del);list.append(row)});if(!alarms.length)list.innerHTML='<p class="clock-hint">没有闹钟</p>'}render();$('#alarm-form').onsubmit=e=>{e.preventDefault();alarms.push({time:$('#alarm-time').value,on:true});save();render()};
   }else if(tab==='秒表'){
-    clockShell(tab,'<h1 class="clock-title">秒表</h1><div class="stopwatch-digits" id="stopwatch-display"></div><div class="stopwatch-actions"><button id="stopwatch-reset">复位</button><button id="stopwatch-start"></button></div>');
+    clockShell(tab,'<h1 class="clock-title stopwatch-title">Stopwatch</h1><div class="stopwatch-digits" id="stopwatch-display"></div><div class="stopwatch-actions"><button id="stopwatch-reset">复位</button><button id="stopwatch-start"></button></div>');
     const tick=()=>{const ms=stopwatchElapsed+(stopwatchStart?Date.now()-stopwatchStart:0);$('#stopwatch-display').textContent=String(Math.floor(ms/60000)).padStart(2,'0')+':'+String(Math.floor(ms/1000)%60).padStart(2,'0')+'.'+String(Math.floor(ms/10)%100).padStart(2,'0');$('#stopwatch-start').textContent=stopwatchStart?'停止':'启动'};tick();clockTimer=setInterval(tick,50);$('#stopwatch-start').onclick=()=>{if(stopwatchStart){stopwatchElapsed+=Date.now()-stopwatchStart;stopwatchStart=null}else stopwatchStart=Date.now();tick()};$('#stopwatch-reset').onclick=()=>{stopwatchElapsed=0;stopwatchStart=null;tick()};
   }else{
-    clockShell(tab,'<h1 class="clock-title">计时器</h1><label class="timer-input">时长（分钟）<input id="timer-minutes" type="number" value="5" min="1" max="180" step="1"></label><div class="stopwatch-digits" id="timer-display"></div><div class="stopwatch-actions"><button id="timer-reset">取消</button><button id="timer-start"></button></div>');
+    clockShell(tab,'<h1 class="clock-title">Timers</h1><label class="timer-input">时长（分钟）<input id="timer-minutes" type="number" value="5" min="1" max="180" step="1"></label><div class="stopwatch-digits" id="timer-display"></div><div class="stopwatch-actions"><button id="timer-reset">取消</button><button id="timer-start"></button></div>');
     function tick(){if(timerEnd){timerRemaining=Math.max(0,timerEnd-Date.now());if(!timerRemaining){timerEnd=null;toast('计时结束')}}const seconds=Math.ceil(timerRemaining/1000);$('#timer-display').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');$('#timer-start').textContent=timerEnd?'暂停':timerRemaining?'继续':'开始';$('#timer-minutes').disabled=!!timerEnd}
     tick();clockTimer=setInterval(tick,200);$('#timer-start').onclick=()=>{if(timerEnd){timerRemaining=Math.max(0,timerEnd-Date.now());timerEnd=null}else{if(!timerRemaining){const minutes=+$('#timer-minutes').value;if(!Number.isInteger(minutes)||minutes<1||minutes>180)return toast('请输入 1–180 分钟');timerRemaining=minutes*60000}timerEnd=Date.now()+timerRemaining}tick()};$('#timer-reset').onclick=()=>{timerEnd=null;timerRemaining=0;tick()};
   }
@@ -505,7 +505,7 @@ phoneScreen.addEventListener('pointerdown',e=>{
   const rect=phoneScreen.getBoundingClientRect(),fromBottom=e.clientY>rect.bottom-42;
   const isControl=e.target.closest('button,input,textarea,select,a');
   if(phoneLocked){if($('#passcode-panel').hidden&&!isControl)homeSwipe={x:e.clientX,y:e.clientY,bottom:true,locked:true,pointer:e.pointerId};return}
-  if(fromBottom||(!e.target.closest('input,textarea,select,a')&&e.pointerType==='mouse'&&!e.target.closest('.native-chat-history,.message-history,.library-grid,.library-search,.photos'))){homeSwipe={x:e.clientX,y:e.clientY,bottom:fromBottom,locked:false,pointer:e.pointerId}}
+  if(fromBottom||(!e.target.closest('input,textarea,select,a')&&e.pointerType==='mouse'&&!e.target.closest('.native-chat-history,.message-history,.library-grid,.library-search,.photos,.thread-list,#weibo-content,.clock-content'))){homeSwipe={x:e.clientX,y:e.clientY,bottom:fromBottom,locked:false,pointer:e.pointerId}}
 },{capture:true});
 phoneScreen.addEventListener('pointermove',e=>{if(!homeSwipe||homeSwipe.pointer!==e.pointerId)return;const dy=homeSwipe.y-e.clientY,dx=Math.abs(homeSwipe.x-e.clientX);if(dy>55&&dy>dx*1.4){if(homeSwipe.locked){if(phoneLocked)showPasscode()}else if(!phoneLocked)home();homeSwipe=null;swipeConsumed=e.pointerType==='mouse';setTimeout(()=>swipeConsumed=false,350);if(e.cancelable)e.preventDefault()}},{capture:true});
 window.addEventListener('pointerup',()=>homeSwipe=null);window.addEventListener('pointercancel',()=>homeSwipe=null);
@@ -514,7 +514,7 @@ phoneScreen.addEventListener('click',e=>{if(swipeConsumed){e.preventDefault();e.
 lockPhone();
 
 // 参考图四的经典 iOS 默认图标：纯净形状、渐变底色与统一圆角。
-function iosIcon(name){
+function vectorIosIcon(name){
  const id='ios-classic-'+(iosIcon.serial=(iosIcon.serial||0)+1);
  const gradient=(key,a,b)=>`<linearGradient id="${id}-${key}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
  const draw=(a,b,body,defs='')=>`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${gradient('bg',a,b)}${defs}</defs><rect width="64" height="64" rx="14" fill="url(#${id}-bg)"/>${body}</svg>`;
@@ -542,3 +542,114 @@ document.querySelectorAll('#passcode-keypad button,#passcode-cancel,#passcode-de
  button.addEventListener('pointerup',event=>{if(event.pointerType==='touch'){event.preventDefault();lastTouch=performance.now();activate.call(button,event)}});
  button.onclick=event=>{if(event.detail!==0&&performance.now()-lastTouch<500)return;activate.call(button,event)};
 });
+
+// 直接展示用户上传的原图图标；SVG 视窗仅做浏览器裁切，原素材保持不变。
+function iosIcon(name){
+ const icons={
+  'Google Maps':['Google Maps icon.jpg',317,344,41,30,192,192],
+  'Gmail':['Gmail icon.jpg',266,263,33,16,192,192],
+  'Instagram':['Instagram & Weibo icon.jpg',522,304,29,49,193,193],
+  'Weibo':['Instagram & Weibo icon.jpg',522,304,302,49,192,193],
+  '相机':['Camera icon.jpg',244,216,14,28,192,188],
+  '时钟':['Clock icon.jpg',226,278,11,34,193,193],
+  '信息':['Messages icon.jpg',275,308,41,46,192,193],
+  '健康':['Health icon.jpg',307,312,46,51,192,192],
+  '音乐':['Music icon.jpg',340,334,85,45,193,193],
+  '备忘录':['Notes icon.jpg',291,324,40,62,192,192],
+  '天气':['Weather icon.jpg',231,264,18,21,192,192],
+  '钱包':['Wallet icon.jpg',296,260,27,17,192,192],
+  '设置':['Settings icon.jpg',320,302,45,34,192,192],
+  '微信':['WeChat icon.jpg',257,308,20,43,192,192],
+  'Safari':['Safari icon.jpg',271,280,35,16,192,192],
+  '电话':['Phone icon.jpg',254,294,28,17,192,192],
+  '地图':['Maps icon.jpg',248,306,18,51,192,193],
+  '照片':['Photo icon.jpg',229,286,21,44,192,193]
+ };
+ const spec=icons[name];if(!spec)return vectorIosIcon(name);
+ const [file,w,h,x,y,cw,ch]=spec;
+ return `<svg class="uploaded-app-icon" data-icon-file="${file}" viewBox="${x} ${y} ${cw} ${ch}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><image href="assets/${encodeURIComponent(file)}" x="0" y="0" width="${w}" height="${h}"/></svg>`;
+}
+function clockTabSymbol(index){const shapes=[
+ '<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 7h14M5 17h14"/>',
+ '<circle cx="12" cy="13" r="8"/><path d="M12 7v6H8M5 20l-2 2M19 20l2 2M2 5l4-3M18 2l4 3"/>',
+ '<circle cx="12" cy="14" r="8"/><path d="M12 10v5M9 2h6M12 2v4M18 6l2-2"/>',
+ '<path d="M5 5a9 9 0 11-2 6M5 1v5H1M12 6v7l4 3"/>'
+ ];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">${shapes[index]}</svg>`}
+
+// 保留计时逻辑，只补充参考图中的睡眠计划、计次和交互布局。
+const clockTabBeforeAssets=showClockTab;
+let stopwatchLaps=[];
+showClockTab=function(tab){
+ clockTabBeforeAssets(tab);
+ if(tab==='闹钟'){
+  $('#sleep-time').textContent=storage.getItem('sleep-wake-time')||'07:30';
+  $('#sleep-change').onclick=()=>{const sheet=document.createElement('form');sheet.className='clock-sheet';sheet.innerHTML='<h3>Sleep | Wake Up</h3><label>起床时间<input id="sleep-input" type="time" value="'+($('#sleep-time').textContent)+'" required></label><button type="submit">保存</button><button type="button" id="sleep-cancel">取消</button>';view.append(sheet);sheet.onsubmit=e=>{e.preventDefault();storage.setItem('sleep-wake-time',$('#sleep-input').value);$('#sleep-time').textContent=$('#sleep-input').value;sheet.remove()};$('#sleep-cancel').onclick=()=>sheet.remove()};
+ }else if(tab==='秒表'){
+  const laps=document.createElement('div');laps.id='stopwatch-laps';$('.clock-content').append(laps);
+  const lapButton=document.createElement('button');lapButton.id='stopwatch-lap';lapButton.textContent='计次';$('.stopwatch-actions').prepend(lapButton);
+  function render(){laps.replaceChildren();stopwatchLaps.forEach((ms,i)=>{const row=document.createElement('div');row.className='stopwatch-lap-row';row.textContent='Lap '+(i+1)+'        '+String(Math.floor(ms/60000)).padStart(2,'0')+':'+String(Math.floor(ms/1000)%60).padStart(2,'0')+'.'+String(Math.floor(ms/10)%100).padStart(2,'0');laps.prepend(row)})}
+  render();lapButton.onclick=()=>{if(!stopwatchStart)return toast('先启动秒表，再记录计次');stopwatchLaps.push(stopwatchElapsed+Date.now()-stopwatchStart);render()};
+  const reset=$('#stopwatch-reset').onclick;$('#stopwatch-reset').onclick=()=>{reset();stopwatchLaps=[];render()};
+ }
+};
+
+// 新应用均为本地模拟，不连接真实账号，不发送网络消息。
+const socialDefaults=[{id:'daily',author:'日常记录员',avatar:'日',text:'从未想过，认真热烈这四个字能和我挂钩。把普通的日子过得闪闪发亮。',quote:'你的朋友圈\n的生活着',image:0},{id:'walk',author:'周末去散步',avatar:'周',text:'今天也要记得抬头看看天空。收藏一点沿途的好风景。',image:7}];
+let weiboPosts=readJSON('weibo-posts',socialDefaults);if(!Array.isArray(weiboPosts))weiboPosts=[...socialDefaults];
+let socialLikes=readJSON('social-likes',{});if(!socialLikes||typeof socialLikes!=='object'||Array.isArray(socialLikes))socialLikes={};
+function toggleSocialLike(id){socialLikes[id]=!socialLikes[id];storage.setItem('social-likes',JSON.stringify(socialLikes));return socialLikes[id]}
+function showWeibo(tab='Weibo',feed='Follow'){
+ layout('Weibo','<div class="weibo-heading"><button id="weibo-calendar" aria-label="每日签到">♧</button><button data-wb-feed="Follow" class="'+(feed==='Follow'?'selected':'')+'">Follow<span>⌄</span></button><button data-wb-feed="For You" class="'+(feed==='For You'?'selected':'')+'">For You</button><button id="weibo-compose" aria-label="发布微博">＋</button></div><div id="weibo-content"></div><nav class="weibo-tabs" aria-label="微博导航">'+['Weibo','Super Group','Discover','Message','Me'].map((t,i)=>`<button data-weibo-tab="${t}" class="${t===tab?'selected':''}"><span>${['⌂','◇','⌕','✉','♙'][i]}</span>${t}</button>`).join('')+'</nav>');view.dataset.app='Weibo';
+ document.querySelectorAll('[data-weibo-tab]').forEach(b=>b.onclick=()=>showWeibo(b.dataset.weiboTab));document.querySelectorAll('[data-wb-feed]').forEach(b=>b.onclick=()=>showWeibo(tab,b.dataset.wbFeed));
+ $('#weibo-calendar').onclick=()=>{const today=fitnessDate();if(storage.getItem('weibo-checkin')===today)return toast('今天已签到');storage.setItem('weibo-checkin',today);showWeibo(tab,feed);toast('签到成功 · 本地模拟')};
+ $('#weibo-compose').onclick=()=>{
+  const sheet=document.createElement('form');sheet.className='social-compose';sheet.innerHTML='<div><b>发微博</b><button type="button" id="weibo-compose-cancel">取消</button></div><textarea id="weibo-text" aria-label="微博内容" placeholder="分享你的新鲜事…" maxlength="1000" required></textarea><button type="submit">发布</button>';view.append(sheet);$('#weibo-compose-cancel').onclick=()=>sheet.remove();sheet.onsubmit=e=>{e.preventDefault();const text=$('#weibo-text').value.trim();if(!text)return;weiboPosts.unshift({id:'post-'+Date.now(),author:deviceName(),avatar:'我',text});storage.setItem('weibo-posts',JSON.stringify(weiboPosts));showWeibo();toast('已发布到本地模拟微博')};$('#weibo-text').focus();
+ };
+ const content=$('#weibo-content');
+ if(tab==='Weibo'||tab==='Discover'){
+  content.innerHTML=(tab==='Weibo'?'<section class="weibo-checkin"><div>连签 7 天，记录生活<button id="weibo-checkin">'+(storage.getItem('weibo-checkin')===fitnessDate()?'已签到':'签到')+'</button></div><div class="weibo-red-packets">'+Array.from({length:7},(_,i)=>`<span><b>福</b><small>${i+1} 天</small></span>`).join('')+'</div></section>':'<label class="weibo-search"><input id="weibo-search" placeholder="搜索微博内容" aria-label="搜索微博"></label><p class="weibo-hot">热搜 · 今日生活灵感 &nbsp; #日常的小美好#</p>')+'<div id="weibo-feed"></div>';
+  if($('#weibo-checkin'))$('#weibo-checkin').onclick=()=>$('#weibo-calendar').click();
+  function renderPosts(query=''){
+   $('#weibo-feed').replaceChildren();const posts=(feed==='For You'?[...weiboPosts].reverse():weiboPosts).filter(p=>(p.text+p.author).includes(query));
+   posts.forEach(post=>{
+    const card=document.createElement('article');card.className='weibo-post';
+    const header=document.createElement('div');header.className='weibo-post-header';const avatar=document.createElement('span');avatar.className='weibo-avatar';avatar.textContent=post.avatar||'我';const author=document.createElement('div');const name=document.createElement('b');name.textContent=post.author;const time=document.createElement('small');time.textContent='刚刚 · 来自 iPhone 客户端';author.append(name,time);header.append(avatar,author);
+    const text=document.createElement('p');text.textContent=post.text;card.append(header,text);
+    if(post.quote){const quote=document.createElement('div');quote.className='weibo-quote';quote.textContent=post.quote;card.append(quote)}else if(Number.isInteger(post.image)){const pic=document.createElement('div');pic.className='weibo-post-image';pic.style.cssText=atlasStyle(demoPhotos[post.image]);card.append(pic)}
+    const actions=document.createElement('div');actions.className='weibo-post-actions';const repost=document.createElement('button');repost.textContent='↗ Repost';repost.onclick=()=>{storage.setItem('weibo-repost-'+post.id,'true');repost.textContent='✓ 已转发';toast('已保存本地转发记录')};const comment=document.createElement('button');comment.textContent='▤ 评论';comment.onclick=()=>showWeiboComments(post);const like=document.createElement('button');like.textContent=socialLikes['wb-'+post.id]?'♥ 2':'♡ 1';like.classList.toggle('liked',!!socialLikes['wb-'+post.id]);like.onclick=()=>{const on=toggleSocialLike('wb-'+post.id);like.textContent=on?'♥ 2':'♡ 1';like.classList.toggle('liked',on)};actions.append(repost,comment,like);card.append(actions);$('#weibo-feed').append(card);
+   });if(!posts.length)$('#weibo-feed').innerHTML='<p class="muted" style="padding:25px">没有找到相关微博</p>';
+  }
+  renderPosts();if($('#weibo-search'))$('#weibo-search').oninput=e=>renderPosts(e.target.value.trim());
+ }else if(tab==='Super Group'){
+  content.innerHTML='<section class="social-card"><h3>发现超话</h3><p>日常生活 · 旅行摄影 · 音乐分享</p><button id="weibo-follow">'+(storage.getItem('weibo-group-follow')==='true'?'已关注':'＋ 关注生活超话')+'</button></section>';$('#weibo-follow').onclick=()=>{const on=storage.getItem('weibo-group-follow')!=='true';storage.setItem('weibo-group-follow',String(on));$('#weibo-follow').textContent=on?'已关注':'＋ 关注生活超话'};
+ }else if(tab==='Message'){
+  content.innerHTML='<section class="social-card"><h3>消息</h3><p>系统通知</p><p class="muted">欢迎来到本地微博模拟器。点赞、评论和发布仅保存在当前浏览器。</p></section>';
+ }else{
+  content.innerHTML='<section class="social-card"><span class="weibo-avatar">我</span><h3 id="weibo-profile"></h3><p>微博 '+weiboPosts.filter(p=>p.id.startsWith('post-')).length+' &nbsp; · &nbsp; 关注 '+(storage.getItem('weibo-group-follow')==='true'?1:0)+'</p><p class="muted">本地模拟账号</p></section>';$('#weibo-profile').textContent=deviceName();
+ }
+}
+function showWeiboComments(post){
+ let comments=readJSON('weibo-comments-'+post.id,[]);if(!Array.isArray(comments))comments=[];
+ layout('评论','<div class="social-card"><b id="wb-comment-author"></b><p id="wb-comment-post"></p></div><div id="wb-comments"></div><form class="social-comment-form" id="wb-comment-form"><input id="wb-comment-input" aria-label="微博评论" placeholder="写评论…" maxlength="500" required><button>发送</button></form>');view.dataset.app='Weibo评论';$('#back').textContent='‹ 微博';$('#back').onclick=()=>showWeibo();$('#wb-comment-author').textContent=post.author;$('#wb-comment-post').textContent=post.text;
+ function render(){$('#wb-comments').replaceChildren();comments.forEach(c=>{const p=document.createElement('p');p.className='social-card';p.textContent=c;$('#wb-comments').append(p)})}render();$('#wb-comment-form').onsubmit=e=>{e.preventDefault();const t=$('#wb-comment-input').value.trim();if(!t)return;comments.push(t);storage.setItem('weibo-comments-'+post.id,JSON.stringify(comments));render();$('#wb-comment-input').value=''};
+}
+function showInstagram(){
+ layout('Instagram','<h1 class="instagram-title">Instagram</h1><div class="instagram-stories"><span>＋<small>你的快拍</small></span><span>☀<small>周末出游</small></span><span>♡<small>生活日常</small></span></div><div id="instagram-feed"></div>');view.dataset.app='Instagram';
+ [0,5,7].forEach((image,i)=>{const card=document.createElement('article');card.className='instagram-post';const title=document.createElement('b');title.textContent=['daily.moments','weekend.walk','little.world'][i];const photo=document.createElement('div');photo.className='instagram-photo';photo.style.cssText=atlasStyle(demoPhotos[image]);const like=document.createElement('button');const key='ig-'+i;like.textContent=socialLikes[key]?'♥ 已赞':'♡ 赞';like.onclick=()=>like.textContent=toggleSocialLike(key)?'♥ 已赞':'♡ 赞';const caption=document.createElement('p');caption.textContent=['把今天的阳光收藏起来。','沿着海岸线，慢慢走。','记录身边的小美好。'][i];card.append(title,photo,like,caption);$('#instagram-feed').append(card)});
+}
+let localMail=readJSON('gmail-sent',[]);if(!Array.isArray(localMail))localMail=[];
+function showGmail(sent=false){
+ layout('Gmail','<div class="gmail-heading"><span>☰</span><input id="gmail-search" placeholder="搜索邮件" aria-label="搜索邮件"><span class="gmail-avatar">G</span></div><div class="gmail-folders"><button id="gmail-inbox" class="'+(!sent?'selected':'')+'">收件箱</button><button id="gmail-sent" class="'+(sent?'selected':'')+'">已发送</button></div><div id="gmail-list"></div><button class="gmail-compose" id="gmail-compose">✎ 写邮件</button>');view.dataset.app='Gmail';
+ const inbox=[{to:'Google',subject:'欢迎使用 Gmail',body:'这是模拟收件箱。你可以查看邮件，或尝试撰写一封本地邮件。'},{to:'小A',subject:'周末见！',body:'周末十点在公园门口见，记得带相机。'},{to:'旅行清单',subject:'出发之前的小提醒',body:'充电器、外套和一本喜欢的书，都准备好了吗？'}];
+ function render(){const q=$('#gmail-search').value.toLowerCase();$('#gmail-list').replaceChildren();(sent?localMail:inbox).filter(m=>(m.to+m.subject+m.body).toLowerCase().includes(q)).forEach(m=>{const row=document.createElement('button');row.className='gmail-row';const avatar=document.createElement('span');avatar.textContent=m.to.slice(0,1);const summary=document.createElement('span');const name=document.createElement('b');name.textContent=m.to;const subject=document.createElement('strong');subject.textContent=m.subject;const body=document.createElement('small');body.textContent=m.body;summary.append(name,subject,body);row.append(avatar,summary);row.onclick=()=>{layout('邮件','<div class="social-card"><h3 id="mail-subject"></h3><p class="muted" id="mail-person"></p><p id="mail-body"></p></div>');view.dataset.app='Gmail';$('#back').textContent='‹ Gmail';$('#back').onclick=()=>showGmail(sent);$('#mail-subject').textContent=m.subject;$('#mail-person').textContent=m.to;$('#mail-body').textContent=m.body};$('#gmail-list').append(row)});if(!$('#gmail-list').children.length)$('#gmail-list').innerHTML='<p class="muted" style="padding:20px">没有邮件</p>'}render();$('#gmail-search').oninput=render;$('#gmail-inbox').onclick=()=>showGmail();$('#gmail-sent').onclick=()=>showGmail(true);
+ $('#gmail-compose').onclick=()=>{layout('写邮件','<form id="gmail-form" class="gmail-form"><label>收件人<input id="mail-to" type="email" required placeholder="name@example.com"></label><label>主题<input id="mail-title" required maxlength="120"></label><textarea id="mail-content" aria-label="邮件正文" required placeholder="撰写邮件" maxlength="3000"></textarea><p class="muted">仅保存在本地，不会发送真实邮件。</p><button type="submit">保存到已发送</button></form>');view.dataset.app='Gmail';$('#back').textContent='‹ Gmail';$('#back').onclick=()=>showGmail();$('#gmail-form').onsubmit=e=>{e.preventDefault();localMail.unshift({to:$('#mail-to').value,subject:$('#mail-title').value,body:$('#mail-content').value});storage.setItem('gmail-sent',JSON.stringify(localMail));showGmail(true);toast('已保存本地模拟邮件')}};
+}
+function showGoogleMaps(query='Pittsburgh'){
+ layout('Google Maps','<form class="gm-search" id="gm-search"><span>⌕</span><input id="gm-query" aria-label="搜索地图" placeholder="在这里搜索" maxlength="100"><button>搜索</button></form><div class="gm-map" id="gm-map"><div class="gm-river"></div><span class="gm-street s1">FIFTH AVENUE</span><span class="gm-street s2">LIBERTY AVENUE</span><span class="gm-park">Point State Park</span><div class="gm-pin">●<small id="gm-pin-name"></small></div></div><div class="gm-zoom"><button id="gm-zoom-in" aria-label="放大地图">＋</button><button id="gm-zoom-out" aria-label="缩小地图">−</button></div><div class="gm-location"><b id="gm-location"></b><p>本地示意地图 · 不使用真实定位</p><button id="gm-open">在 Google Maps 中打开 ↗</button></div>');view.dataset.app='Google Maps';$('#gm-query').value=query;$('#gm-pin-name').textContent=query;$('#gm-location').textContent=query;
+ $('#gm-search').onsubmit=e=>{e.preventDefault();const q=$('#gm-query').value.trim();if(q)showGoogleMaps(q)};let zoom=1;const update=()=>{$('#gm-map').style.backgroundSize=(54*zoom)+'px '+(54*zoom)+'px'};$('#gm-zoom-in').onclick=()=>{zoom=Math.min(zoom+.2,2);update()};$('#gm-zoom-out').onclick=()=>{zoom=Math.max(zoom-.2,.6);update()};$('#gm-open').onclick=()=>window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(query),'_blank','noopener,noreferrer');
+}
+function showPittsburghWeather(){
+ layout('天气','<section class="pittsburgh-weather"><span>Pittsburgh</span><strong>16°</strong><b>Clear</b><small>H:25° &nbsp; L:13°</small></section><div class="weather-forecast-card"><p>今晚晴朗，晚间逐渐转凉。</p><div class="weather-hourly">'+['22','23','00','01','02','03'].map((h,i)=>`<div><span>${h}</span><b>☾</b><strong>${[16,15,15,14,14,13][i]}°</strong></div>`).join('')+'</div></div><p class="weather-data-note">模拟天气 · 不连接真实天气服务</p>');view.dataset.app='天气';
+}
+const openBeforeUploadedApps=openApp;
+openApp=function(name){view.classList.remove('wechat-app');if(name==='Weibo')return showWeibo();if(name==='Instagram')return showInstagram();if(name==='Gmail')return showGmail();if(name==='Google Maps')return showGoogleMaps();if(name==='天气')return showPittsburghWeather();openBeforeUploadedApps(name)};
