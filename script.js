@@ -12,7 +12,7 @@ $('#dock').innerHTML=[dockData[0],dockData[1],appData[0],dockData[2]].map(icon).
 $('#apps-second').innerHTML=[['微信'],['计算器'],['Fitness'],['Google Maps'],['Gmail'],['Instagram'],['Weibo']].map(icon).join('');
 let timer,clockTimer;function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(timer);timer=setTimeout(()=>$('#toast').style.display='none',2300)}function home(){if(typeof phoneLocked!=='undefined'&&phoneLocked){showPasscode();return}$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.remove('open');$('.home-indicator').style.color='white';clearInterval(clockTimer)}$('#home').onclick=home;$('#reset').onclick=home;document.addEventListener('keydown',e=>{if(e.key==='Escape'||((e.metaKey||e.ctrlKey)&&e.key==='h')){e.preventDefault();home()}});
 const names=['暮光紫','海盐蓝','落日粉','苔原绿','地球夜景'],walls=['radial-gradient(ellipse at 10% 0%,#d6cef2,transparent 48%),radial-gradient(ellipse at 94% 62%,#9c70c2,transparent 52%),linear-gradient(160deg,#9e9cd2,#aca2d8 45%,#6b5a9f)','linear-gradient(145deg,#a6d5dd,#83b4c5 40%,#3e7396)','linear-gradient(145deg,#f5d4bc,#e9b8b8 40%,#b67494)','linear-gradient(145deg,#c4d4b9,#9cbba9 40%,#56786c)','url("assets/wallpapers/homescreen-wallpaper.png") center/cover'];function wallpaper(i){$('#wallpaper').style.background=walls[i];$('#wallpaper').classList.toggle('earth-wallpaper',i===4);$('#wallpaper-name').textContent=names[i];document.querySelectorAll('.swatch').forEach((b,j)=>b.classList.toggle('active',i===j));storage.setItem('wallpaper',i)}document.querySelectorAll('[data-wall]').forEach(b=>b.onclick=()=>wallpaper(+b.dataset.wall));if(storage.getItem('earth-wallpaper-installed')!=='v1'){storage.setItem('wallpaper','4');storage.setItem('earth-wallpaper-installed','v1')}wallpaper(Math.max(0,Math.min(names.length-1,+storage.getItem('wallpaper')||0)));$('#brightness').oninput=e=>{$('#screen').style.filter=`brightness(${e.target.value}%)`;$('#brightness-value').textContent=e.target.value+'%'};function updateTime(){const d=new Date(),t=d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});$('#clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');$('#lock-time').textContent=t;$('#lock-date').textContent=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});if($('#widget-date'))$('#widget-date').textContent=d.getDate();if($('#widget-day'))$('#widget-day').textContent=d.toLocaleDateString('zh-CN',{weekday:'long'})}updateTime();setInterval(updateTime,10000);$('#lock-button').onclick=lockPhone;$('#unlock').onclick=showPasscode;
-const view=$('#app-view');function layout(name,html){home();delete view.dataset.clockMode;view.scrollTop=0;$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
+const view=$('#app-view');function layout(name,html){home();delete view.dataset.clockMode;delete view.dataset.chatApp;delete view.dataset.chatContact;delete view.dataset.wechatTab;view.scrollTop=0;$('#screen').classList.add('in-app');view.dataset.app=name;view.innerHTML=`<div class="app-top"><button class="back" id="back">‹ 主屏幕</button><span></span></div><h2>${name}</h2>${html}`;view.classList.add('open');$('.home-indicator').style.color='#33283e';$('#back').onclick=home}
 function baseOpenApp(name){switch(name){case '备忘录':layout(name,'<p style="font-size:11px;color:#9d91a6">随手记录，自动保存在此浏览器</p><textarea id="note" placeholder="今天有什么新想法？"></textarea>');$('#note').value=storage.getItem('note')||'';$('#note').oninput=e=>storage.setItem('note',e.target.value);break;
 case '计算器':layout(name,'<div class="calc-display" id="display">0</div><div class="calc-grid">'+['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','⌫','0','.','='].map(x=>`<button data-key="${x}">${x}</button>`).join('')+'</div>');initCalc();break;
 case '天气':layout(name,'<div style="text-align:center;background:linear-gradient(#7297c3,#b4c6df);border-radius:20px;color:white;padding:30px 10px"><div>北京市</div><div style="font-size:75px">23°</div><div>☀ 晴朗</div><small>最高 26° · 最低 17°</small></div><div class="content-card">适合散步的好天气<br><small style="color:#aaa">模拟天气数据</small><div style="display:flex;justify-content:space-between;margin-top:20px">'+['现在 ☀ 23°','15时 ☀ 25°','16时 ☀ 24°'].map(x=>`<span style="font-size:11px">${x}</span>`).join('')+'</div></div>');break;
@@ -289,18 +289,12 @@ const openBeforeFitness=openApp;
 openApp=function(name){if(name==='Fitness'){view.classList.remove('wechat-app');return showFitness()}openBeforeFitness(name)};
 
 // 信息：每位联系人都有独立记录。旧版本已发送的消息迁入文件传输助手。
-const messageContacts = [
-  {id:'a',name:'小A',initial:'A',color:'#b5a5e3',unread:true,lines:[['in','今天下班要不要一起去吃火锅？'],['out','好呀！还是上次那家吗？'],['in','对，我订了六点半的位置，到了给我发消息～']]},
-  {id:'honey',name:'哈尼',initial:'♡',color:'#efa9b9',unread:true,lines:[['in','早上好，记得吃早餐哦 ☀️'],['out','吃过啦，今天带了你买的面包。'],['in','我晚上买菜，想吃番茄炒蛋还是咖喱？'],['out','咖喱！我下班顺路买水果。'],['in','好，那我等你回家一起吃饭 ❤️']]},
-  {id:'mom',name:'妈妈',initial:'妈',color:'#e6ae83',lines:[['in','这几天降温，出门多穿一件衣服。'],['out','知道啦，今天穿了外套。你们也注意保暖！'],['in','周末有空就回来吃饭，给你做好吃的。']]},
-  {id:'weekend',name:'周末出游',initial:'☀',color:'#8bbeb0',lines:[['in','周六去公园怎么样？天气预报说是晴天。'],['out','可以呀，我带点零食。'],['in','那就十点在地铁站见！']]},
-  {id:'assistant',name:'文件传输助手',initial:'▤',color:'#85b1dd',lines:[['in','可以在这里保存临时文字。消息只会保存在当前浏览器。']]}
-];
+const messageContacts = window.PHONE_CHAT_PRESETS.messages;
 let messageThreads = readJSON('message-threads-v2', {});
 if(!messageThreads || typeof messageThreads!=='object' || Array.isArray(messageThreads))messageThreads={};
 messageContacts.forEach((contact,index)=>{
   if(!Array.isArray(messageThreads[contact.id])) {
-    messageThreads[contact.id]=contact.lines.map(([direction,text],i)=>({direction,text,at:new Date(Date.now()-(index*3600+contact.lines.length*120-i*120)*1000).toISOString()}));
+    messageThreads[contact.id]=(contact.lines||[]).map(([direction,text],i)=>({direction,text,at:new Date(Date.now()-(index*3600+contact.lines.length*120-i*120)*1000).toISOString()}));
     if(contact.id==='assistant')messages.forEach(text=>messageThreads.assistant.push({direction:'out',text,at:new Date().toISOString()}));
   }
   messageThreads[contact.id]=messageThreads[contact.id].filter(m=>m&&typeof m.text==='string'&&['in','out'].includes(m.direction));
@@ -317,16 +311,16 @@ function showMessageList(){
   function render(){
     const q=$('#messages-search').value.trim().toLowerCase();$('#thread-list').replaceChildren();
     const sorted=[...messageContacts].sort((a,b)=>Number(pinnedContacts.includes(b.id))-Number(pinnedContacts.includes(a.id)));
-    for(const c of sorted){const history=messageThreads[c.id],last=history.at(-1),unread=c.unread&&!readContacts.includes(c.id);if(messagesFilterUnread&&!unread)continue;if(q&&!c.name.toLowerCase().includes(q)&&!history.some(m=>m.text.toLowerCase().includes(q)))continue;
+    for(const c of sorted){const history=messageThreads[c.id],last=history.at(-1),unreadCount=window.PhoneChatEngine?.unread('messages',c.id)??(c.unread&&!readContacts.includes(c.id)?1:0),unread=unreadCount>0;if(messagesFilterUnread&&!unread)continue;if(q&&!c.name.toLowerCase().includes(q)&&!history.some(m=>m.text.toLowerCase().includes(q)))continue;
       const row=document.createElement('button');row.className='message-thread';row.dataset.thread=c.id;row.setAttribute('aria-label','打开与'+c.name+'的聊天');
       const dot=document.createElement('span');dot.className='unread-dot'+(unread?' visible':'');
-      const avatar=document.createElement('span');avatar.className='contact-avatar';avatar.style.background=c.color;avatar.textContent=c.initial;
+      const avatar=document.createElement('span');avatar.className='contact-avatar';applyConfiguredAvatar(avatar,c);
       const summary=document.createElement('span');summary.className='thread-summary';
       const heading=document.createElement('span');heading.className='thread-heading';
       const name=document.createElement('b');name.textContent=(pinnedContacts.includes(c.id)?'⌖ ':'')+c.name;
       const time=document.createElement('small');time.textContent=editing?(pinnedContacts.includes(c.id)?'取消置顶':'置顶'):messageTime(last?.at);
       heading.append(name,time);const snippet=document.createElement('span');snippet.className='thread-snippet';snippet.textContent=last?.text||'暂无消息';summary.append(heading,snippet);
-      const arrow=document.createElement('span');arrow.className='thread-arrow';arrow.textContent='›';row.append(dot,avatar,summary,arrow);
+      const arrow=document.createElement('span');arrow.className='thread-arrow';arrow.textContent='›';row.append(dot,avatar,summary,arrow);if(unreadCount){const badge=document.createElement('span');badge.className='thread-unread-count';badge.textContent=unreadCount>99?'99+':unreadCount;badge.setAttribute('aria-label',unreadCount+'条未读');row.append(badge)}
       row.onclick=()=>{if(editing){pinnedContacts=pinnedContacts.includes(c.id)?pinnedContacts.filter(id=>id!==c.id):[...pinnedContacts,c.id];storage.setItem('message-pins',JSON.stringify(pinnedContacts));render()}else showMessageChat(c.id)};
       $('#thread-list').append(row);
     }
@@ -346,11 +340,11 @@ function showMessageChat(id){
   const c=messageContacts.find(c=>c.id===id);if(!c)return showMessageList();
   if(!readContacts.includes(id)){readContacts.push(id);storage.setItem('message-read',JSON.stringify(readContacts))}
   layout(c.name,'<div class="chat-contact-header"><span class="contact-avatar" id="chat-avatar"></span><b id="chat-name"></b><span>›</span></div><p class="chat-date">iMessage · 本地模拟</p><div id="messages" class="native-chat-history" aria-live="polite"></div><form id="message-form" class="native-message-form"><span class="message-plus" aria-hidden="true">＋</span><input id="message" aria-label="输入消息" placeholder="iMessage" maxlength="2000" autocomplete="off"><button type="submit" aria-label="发送信息">↑</button></form>');
-  view.dataset.app='信息聊天';$('#back').textContent='‹ 信息';$('#back').onclick=showMessageList;
-  $('#chat-avatar').textContent=c.initial;$('#chat-avatar').style.background=c.color;$('#chat-name').textContent=c.name;
-  function append(m){const p=document.createElement('p');p.className='bubble '+(m.direction==='out'?'sent':'received');p.textContent=m.text;$('#messages').append(p)}
+  view.dataset.app='信息聊天';view.dataset.chatApp='messages';view.dataset.chatContact=id;window.PhoneChatEngine?.markRead('messages',id);$('#back').textContent='‹ 信息';$('#back').onclick=showMessageList;
+  applyConfiguredAvatar($('#chat-avatar'),c);$('#chat-name').textContent=c.name;
+  function append(m){appendMessageBubble(m)}
   messageThreads[id].forEach(append);$('#messages').scrollTop=$('#messages').scrollHeight;
-  $('#message-form').onsubmit=e=>{e.preventDefault();const text=$('#message').value.trim();if(!text)return;const m={direction:'out',text,at:new Date().toISOString()};messageThreads[id].push(m);saveMessageThreads();append(m);$('#messages').scrollTop=$('#messages').scrollHeight;$('#message').value='';$('#message').focus()};
+  $('#message-form').onsubmit=e=>{e.preventDefault();const text=$('#message').value.trim();if(!text)return;const m={direction:'out',text,at:new Date().toISOString()};messageThreads[id].push(m);saveMessageThreads();append(m);$('#messages').scrollTop=$('#messages').scrollHeight;$('#message').value='';$('#message').focus();window.PhoneChatEngine?.afterUserSend('messages',id,text)};renderChatTyping();
 }
 
 // 世界时钟使用 IANA 时区，浏览器自动处理夏令时和日期跨越。
@@ -473,7 +467,7 @@ function lockInert(locked){for(const selector of ['#home-pages','#dock','.dots',
 function lockPhone(){
   document.querySelectorAll('.locked-camera').forEach(el=>el.remove());
   clearTimeout(passcodeTimeout);phoneLocked=true;passcodeValue='';passcodePending=false;clearInterval(clockTimer);
-  $('#screen').classList.add('phone-locked');$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.add('open');$('#lock-face').hidden=false;$('#passcode-panel').hidden=true;$('#lock').classList.remove('showing-passcode','lock-camera-open');$('#home').style.color='white';lockInert(true);updateTime();
+  $('#screen').classList.add('phone-locked');$('#screen').classList.remove('in-app');$('#app-view').classList.remove('open');$('#lock').classList.add('open');$('#lock-face').hidden=false;$('#passcode-panel').hidden=true;$('#lock').classList.remove('showing-passcode','lock-camera-open');$('#home').style.color='white';lockInert(true);updateTime();document.dispatchEvent(new Event('phone-locked'));
 }
 function showPasscode(){if(!phoneLocked)return;document.querySelectorAll('.locked-camera').forEach(el=>el.remove());$('#lock-face').hidden=true;$('#passcode-panel').hidden=false;$('#lock').classList.add('showing-passcode');passcodeValue='';passcodePending=false;clearTimeout(passcodeTimeout);$('#passcode-status').textContent='输入四位密码以解锁';renderPasscode()}
 function renderPasscode(){document.querySelectorAll('#passcode-dots span').forEach((dot,i)=>dot.classList.toggle('filled',i<passcodeValue.length));$('#passcode-dots').setAttribute('aria-label','已输入'+passcodeValue.length+'位密码')}
@@ -481,7 +475,7 @@ function enterPasscode(digit){
   if(!phoneLocked||$('#passcode-panel').hidden||passcodePending||passcodeValue.length>=4)return;
   passcodeValue+=digit;renderPasscode();
   if(passcodeValue.length===4){passcodePending=true;passcodeTimeout=setTimeout(()=>{
-    if(passcodeValue==='1228'){phoneLocked=false;passcodeValue='';passcodePending=false;$('#screen').classList.remove('phone-locked');$('#lock').classList.remove('open','showing-passcode');$('#passcode-panel').hidden=true;lockInert(false);home()}
+    if(passcodeValue==='1228'){phoneLocked=false;passcodeValue='';passcodePending=false;$('#screen').classList.remove('phone-locked');$('#lock').classList.remove('open','showing-passcode');$('#passcode-panel').hidden=true;lockInert(false);home();window.PhoneChatEngine?.onUnlock()}
     else{passcodeValue='';passcodePending=false;$('#passcode-status').textContent='密码不正确，请重试';$('#passcode-dots').classList.remove('wrong');void $('#passcode-dots').offsetWidth;$('#passcode-dots').classList.add('wrong');renderPasscode()}
   },180)}
 }
@@ -496,20 +490,9 @@ $('#lock-camera').onclick=()=>{
   $('#lock').append(overlay);overlay.querySelector('.locked-camera-close').onclick=()=>overlay.remove();overlay.querySelector('.shutter').onclick=()=>{overlay.classList.add('capture-flash');setTimeout(()=>overlay.classList.remove('capture-flash'),160)};
 };
 
-// 底部上滑返回。桌面支持鼠标拖动；触屏保留应用内部正常纵向滚动。
+// 手势由独立导航处理；点击横条仍保留回到主屏幕的原操作。
 let homeSwipe=null,swipeConsumed=false;
 const phoneScreen=$('#screen');
-phoneScreen.addEventListener('pointerdown',e=>{
-  swipeConsumed=false;homeSwipe=null;
-  if(e.button&&e.button!==0)return;
-  const rect=phoneScreen.getBoundingClientRect(),fromBottom=e.clientY>rect.bottom-42;
-  const isControl=e.target.closest('button,input,textarea,select,a');
-  if(phoneLocked){if($('#passcode-panel').hidden&&!isControl)homeSwipe={x:e.clientX,y:e.clientY,bottom:true,locked:true,pointer:e.pointerId};return}
-  if(fromBottom||(!e.target.closest('input,textarea,select,a')&&e.pointerType==='mouse'&&!e.target.closest('.native-chat-history,.message-history,.library-grid,.library-search,.photos,.thread-list,#weibo-content,.clock-content'))){homeSwipe={x:e.clientX,y:e.clientY,bottom:fromBottom,locked:false,pointer:e.pointerId}}
-},{capture:true});
-phoneScreen.addEventListener('pointermove',e=>{if(!homeSwipe||homeSwipe.pointer!==e.pointerId)return;const dy=homeSwipe.y-e.clientY,dx=Math.abs(homeSwipe.x-e.clientX);if(dy>55&&dy>dx*1.4){if(homeSwipe.locked){if(phoneLocked)showPasscode()}else if(!phoneLocked)home();homeSwipe=null;swipeConsumed=e.pointerType==='mouse';setTimeout(()=>swipeConsumed=false,350);if(e.cancelable)e.preventDefault()}},{capture:true});
-window.addEventListener('pointerup',()=>homeSwipe=null);window.addEventListener('pointercancel',()=>homeSwipe=null);
-phoneScreen.addEventListener('click',e=>{if(swipeConsumed){e.preventDefault();e.stopPropagation()}},true);
 // 启动时展示锁屏。上滑或点击提示后输入 1228。
 lockPhone();
 
@@ -710,18 +693,18 @@ function startSimulatedCall(c){
 }
 
 // 微信多会话：保留文件传输助手的旧记录，新增联系人与群聊。
-const wechatPeople=[{id:'honey',name:'哈尼',pet:1,seed:[{out:false,text:'晚上想吃什么？我顺路买菜。'},{out:true,text:'想吃咖喱，回家见～'}]},{id:'coworker',name:'同事A',pet:0,seed:[{out:false,text:'明天的资料我整理好了，早上一起确认一下吧。'}]},{id:'friendc',name:'朋友C',pet:1,seed:[{out:false,text:'周末一起喝咖啡吗？发现了一家新店。'}]},{id:'friday',name:'周五打球群',group:true,seed:[{out:false,text:'朋友C：这周五还是七点，老地方球馆见！'},{out:true,text:'收到，我带球。'},{out:false,text:'同事A：我也来，打完一起吃饭～'}]},{id:'assistant',name:'文件传输助手',assistant:true,seed:[]}];
-let wechatThreads=readJSON('wechat-threads-v2',{});if(!wechatThreads||Array.isArray(wechatThreads)||typeof wechatThreads!=='object')wechatThreads={};wechatPeople.forEach(c=>{if(!Array.isArray(wechatThreads[c.id]))wechatThreads[c.id]=c.assistant?wechatHistory.map(text=>({out:true,text})):c.seed.map(x=>({...x}));});storage.setItem('wechat-threads-v2',JSON.stringify(wechatThreads));
-function wechatAvatar(c){return c.assistant?iosIcon('微信'):c.group?'<span class="wechat-group-avatar">'+[0,1,1,0].map(i=>petAvatar(i)).join('')+'</span>':petAvatar(c.pet)}
+const wechatPeople=window.PHONE_CHAT_PRESETS.wechat;
+let wechatThreads=readJSON('wechat-threads-v2',{});if(!wechatThreads||Array.isArray(wechatThreads)||typeof wechatThreads!=='object')wechatThreads={};wechatPeople.forEach(c=>{if(!Array.isArray(wechatThreads[c.id]))wechatThreads[c.id]=c.assistant?wechatHistory.map(text=>({out:true,text})):(c.seed||[]).map(x=>({...x}));});storage.setItem('wechat-threads-v2',JSON.stringify(wechatThreads));
+function wechatAvatar(c){if(c.avatar){const image=document.createElement('img');image.src=c.avatar;image.alt='';image.draggable=false;return image.outerHTML}return c.assistant?iosIcon('微信'):c.group?'<span class="wechat-group-avatar">'+[0,1,1,0].map(i=>petAvatar(i)).join('')+'</span>':petAvatar(c.pet)}
 const oldWeChatPages=showWeChat;
 showWeChat=function(tab='微信'){
  if(!['微信','通讯录'].includes(tab))return oldWeChatPages(tab);
- layout('WeChat','<div class="wechat-native-heading"><b>'+(tab==='微信'?'WeChat':'通讯录')+'</b><button id="wechat-plus" aria-label="选择联系人发消息">⊕</button></div><input id="wechat-query" class="wechat-query" aria-label="搜索微信联系人" placeholder="⌕ 搜索"><div class="wechat-native-content" id="wechat-native-content"></div><nav class="wechat-native-tabs">'+['微信','通讯录','发现','我'].map((t,i)=>`<button data-wx-tab="${t}" class="${t===tab?'selected':''}"><span>${['●','♧','◎','♙'][i]}</span>${t==='微信'?'WeChat':t}</button>`).join('')+'</nav>');view.dataset.app='微信新版';view.classList.remove('wechat-app');document.querySelectorAll('[data-wx-tab]').forEach(b=>b.onclick=()=>showWeChat(b.dataset.wxTab));$('#wechat-plus').onclick=()=>showWeChat('通讯录');
- function render(){const q=$('#wechat-query').value.trim();$('#wechat-native-content').replaceChildren();wechatPeople.filter(c=>c.name.includes(q)).forEach((c,i)=>{const row=document.createElement('button');row.className='wechat-thread';if(c.assistant)row.id=tab==='微信'?'wx-chat':'wx-person';row.dataset.wxContact=c.id;const avatar=document.createElement('span');avatar.className='wechat-thread-avatar';avatar.innerHTML=wechatAvatar(c);const content=document.createElement('span');content.className='wechat-thread-summary';const name=document.createElement('b');name.textContent=c.name;content.append(name);if(tab==='微信'){const preview=document.createElement('small');preview.textContent=wechatThreads[c.id].at(-1)?.text||'可以在这里保存临时文字';content.append(preview)}const time=document.createElement('small');time.className='wechat-thread-time';time.textContent=tab==='微信'?['22:15','22:03','21:28','20:59','10:24'][i]:'';row.append(avatar,content,time);row.onclick=()=>showWeChatConversation(c.id);$('#wechat-native-content').append(row)})}render();$('#wechat-query').oninput=render;
+ layout('WeChat','<div class="wechat-native-heading"><b>'+(tab==='微信'?'WeChat':'通讯录')+'</b><button id="wechat-plus" aria-label="选择联系人发消息">⊕</button></div><input id="wechat-query" class="wechat-query" aria-label="搜索微信联系人" placeholder="⌕ 搜索"><div class="wechat-native-content" id="wechat-native-content"></div><nav class="wechat-native-tabs">'+['微信','通讯录','发现','我'].map((t,i)=>`<button data-wx-tab="${t}" class="${t===tab?'selected':''}"><span>${['●','♧','◎','♙'][i]}</span>${t==='微信'?'WeChat':t}</button>`).join('')+'</nav>');view.dataset.app='微信新版';view.dataset.wechatTab=tab;view.classList.remove('wechat-app');document.querySelectorAll('[data-wx-tab]').forEach(b=>b.onclick=()=>showWeChat(b.dataset.wxTab));$('#wechat-plus').onclick=()=>showWeChat('通讯录');
+ function render(){const q=$('#wechat-query').value.trim();$('#wechat-native-content').replaceChildren();wechatPeople.filter(c=>c.name.includes(q)).forEach((c,i)=>{const row=document.createElement('button');row.className='wechat-thread';if(c.assistant)row.id=tab==='微信'?'wx-chat':'wx-person';row.dataset.wxContact=c.id;const unreadCount=window.PhoneChatEngine?.unread('wechat',c.id)||0;const avatar=document.createElement('span');avatar.className='wechat-thread-avatar';avatar.innerHTML=wechatAvatar(c);const content=document.createElement('span');content.className='wechat-thread-summary';const name=document.createElement('b');name.textContent=c.name;content.append(name);if(tab==='微信'){const preview=document.createElement('small');preview.textContent=wechatThreads[c.id].at(-1)?.text||'可以在这里保存临时文字';content.append(preview)}const time=document.createElement('small');time.className='wechat-thread-time';time.textContent=tab==='微信'?['22:15','22:03','21:28','20:59','10:24'][i]:'';row.append(avatar,content,time);if(unreadCount&&tab==='微信'){const badge=document.createElement('span');badge.className='wechat-unread-count';badge.textContent=unreadCount>99?'99+':unreadCount;row.append(badge)}row.onclick=()=>showWeChatConversation(c.id);$('#wechat-native-content').append(row)})}render();$('#wechat-query').oninput=render;
 };
 function showWeChatConversation(id='assistant'){
- const c=wechatPeople.find(p=>p.id===id);if(!c)return showWeChat();layout(c.name,'<div class="wechat-chat-title"><button id="wx-back">‹ WeChat</button><b id="wechat-chat-name"></b><span>···</span></div><div class="message-history wx-history" id="wx-history" aria-live="polite"></div><form class="message-form" id="wx-form"><input id="wx-input" aria-label="微信消息" placeholder="输入消息" maxlength="2000" autocomplete="off"><button class="wx-send" type="submit">发送</button></form>');view.dataset.app='微信聊天';view.classList.add('wechat-app');$('#wechat-chat-name').textContent=c.name;$('#wx-back').onclick=()=>showWeChat();
- function append(m){const row=document.createElement('div');row.className='wechat-chat-row'+(m.out?' outgoing':'');const avatar=document.createElement('span');avatar.className='wechat-thread-avatar';avatar.innerHTML=m.out?petAvatar(0):wechatAvatar(c);const text=document.createElement('p');text.className='bubble '+(m.out?'sent':'received');text.textContent=m.text;row.append(avatar,text);$('#wx-history').append(row)}wechatThreads[id].forEach(append);$('#wx-history').scrollTop=$('#wx-history').scrollHeight;$('#wx-form').onsubmit=e=>{e.preventDefault();const t=$('#wx-input').value.trim();if(!t)return;const m={out:true,text:t};wechatThreads[id].push(m);storage.setItem('wechat-threads-v2',JSON.stringify(wechatThreads));if(c.assistant){wechatHistory.push(t);storage.setItem('wechat-messages',JSON.stringify(wechatHistory))}append(m);$('#wx-history').scrollTop=$('#wx-history').scrollHeight;$('#wx-input').value='';$('#wx-input').focus()};
+ const c=wechatPeople.find(p=>p.id===id);if(!c)return showWeChat();layout(c.name,'<div class="wechat-chat-title"><button id="wx-back">‹ WeChat</button><b id="wechat-chat-name"></b><span>···</span></div><div class="message-history wx-history" id="wx-history" aria-live="polite"></div><form class="message-form" id="wx-form"><input id="wx-input" aria-label="微信消息" placeholder="输入消息" maxlength="2000" autocomplete="off"><button class="wx-send" type="submit">发送</button></form>');view.dataset.app='微信聊天';view.dataset.chatApp='wechat';view.dataset.chatContact=id;window.PhoneChatEngine?.markRead('wechat',id);view.classList.add('wechat-app');$('#wechat-chat-name').textContent=c.name;$('#wx-back').onclick=()=>showWeChat();
+ function append(m){appendWeChatBubble(m,c)}wechatThreads[id].forEach(append);$('#wx-history').scrollTop=$('#wx-history').scrollHeight;$('#wx-form').onsubmit=e=>{e.preventDefault();const t=$('#wx-input').value.trim();if(!t)return;const m={out:true,text:t};wechatThreads[id].push(m);storage.setItem('wechat-threads-v2',JSON.stringify(wechatThreads));if(c.assistant){wechatHistory.push(t);storage.setItem('wechat-messages',JSON.stringify(wechatHistory))}append(m);$('#wx-history').scrollTop=$('#wx-history').scrollHeight;$('#wx-input').value='';$('#wx-input').focus();window.PhoneChatEngine?.afterUserSend('wechat',id,t)};renderChatTyping();
 }
 showWeChatChat=()=>showWeChatConversation('assistant');
 
@@ -735,8 +718,8 @@ function toggleMusic(){
  const position=musicPosition();musicPlayer.position=position>=exampleTrack.duration?0:position;musicPlayer.playing=!musicPlayer.playing;musicPlayer.started=performance.now();storage.setItem('music-position',String(musicPlayer.position));if(window.musicCtx){if(musicPlayer.playing)musicCtx.resume();else musicCtx.suspend()}updateMusicUI();
 }
 function seekMusic(position){musicPlayer.position=Math.max(0,Math.min(exampleTrack.duration,position));musicPlayer.started=performance.now();storage.setItem('music-position',String(musicPlayer.position));updateMusicUI()}
-function musicMiniPlayer(){return '<div class="music-mini"><button id="music-mini-open">'+albumCover()+'<span><b>Kiss Goodbye</b><small>Wang Leehom</small></span></button><button id="music-mini-play" aria-label="播放或暂停">▶</button></div>'}
-function bindMusicMini(){$('#music-mini-open').onclick=showNowPlaying;$('#music-mini-play').onclick=toggleMusic;updateMusicUI()}
+function previousMusicMiniPlayer(){return '<div class="music-mini"><button id="music-mini-open">'+albumCover()+'<span><b>Kiss Goodbye</b><small>Wang Leehom</small></span></button><button id="music-mini-play" aria-label="播放或暂停">▶</button></div>'}
+function bindMusicMini(){$('#music-mini-open').onclick=showNowPlaying;$('#music-mini-play').onclick=toggleMusic;$('#music-mini-next').onclick=()=>{seekMusic(0);toast('当前为单曲示例，已重新开始')};updateMusicUI()}
 function showMusicLibrary(section='Library'){
  layout('音乐','<div class="music-library-scroll"><div class="music-library-heading"><h1>'+section+'</h1><button id="music-library-menu" aria-label="音乐菜单">···</button>'+petAvatar(0)+'</div><div id="music-library-content"></div></div>'+musicMiniPlayer()+'<nav class="music-navigation">'+['Home','New','Radio','Library','Search'].map((t,i)=>`<button data-music-nav="${t}" class="${t===section?'selected':''}"><span>${['⌂','⊞','◉','▣','⌕'][i]}</span>${t}</button>`).join('')+'</nav>');view.dataset.app='音乐资料库';
  const body=$('#music-library-content');
@@ -754,7 +737,7 @@ function showMusicPlaylist(name){
  layout(name,'<div class="music-playlist-detail"><div class="playlist-cover '+(name==='K-pop'?'kpop':'chinese')+'">'+name+'</div><h1 id="playlist-name"></h1><p>示例播放列表 · 1 首歌</p><button id="playlist-play">▶ 播放</button></div><button id="playlist-track" class="playlist-track">'+albumCover()+'<span><b>Kiss Goodbye</b><small>Wang Leehom</small></span><span>4:22</span></button>'+musicMiniPlayer());view.dataset.app='音乐播放列表';$('#back').textContent='‹ Library';$('#back').onclick=()=>showMusicLibrary();$('#playlist-name').textContent=name;$('#playlist-play').onclick=()=>{if(!musicPlayer.playing)toggleMusic();showNowPlaying()};$('#playlist-track').onclick=showNowPlaying;bindMusicMini();
 }
 function showMusicCollection(category){if(category==='Playlists')return showMusicLibrary();layout(category,'<p class="muted">'+(category==='TV & Movies'?'还没有影片。':'本地示例音乐资料库')+'</p>'+(category!=='TV & Movies'?'<button id="collection-track" class="playlist-track">'+albumCover()+'<span><b>Kiss Goodbye</b><small>Wang Leehom</small></span></button>':''));view.dataset.app='音乐播放列表';$('#back').textContent='‹ Library';$('#back').onclick=()=>showMusicLibrary();if($('#collection-track'))$('#collection-track').onclick=showNowPlaying}
-function showNowPlaying(){
+function renderNowPlaying(){
  layout('正在播放','<button class="music-player-dismiss" id="music-dismiss" aria-label="返回资料库"></button><div class="now-playing-cover">'+albumCover()+'</div><div class="now-playing-title"><div><h1>Kiss Goodbye</h1><p>Wang Leehom</p></div><button id="music-favorite" aria-label="收藏歌曲">☆</button><button id="music-more" aria-label="播放说明">···</button></div><input id="music-progress" type="range" min="0" max="262" step=".1" value="0" aria-label="歌曲播放进度"><div class="music-time-labels"><span id="music-elapsed"></span><span id="music-remaining"></span></div><div class="music-transport"><button id="music-restart" aria-label="从头播放">◀◀</button><button id="music-play" aria-label="播放或暂停歌曲">▶</button><button id="music-next" aria-label="重新播放示例歌曲">▶▶</button></div><label class="music-volume"><span>◖</span><input id="music-volume" type="range" min="0" max="1" step=".01" aria-label="音量"><span>◗</span></label><div class="music-player-footer"><button id="music-lyrics" aria-label="歌词说明">▤</button><button id="music-output" aria-label="音频输出说明">◎</button><button id="music-queue" aria-label="播放列表">☷</button></div>');view.dataset.app='音乐播放器';$('#music-dismiss').onclick=()=>showMusicLibrary();$('#music-play').onclick=toggleMusic;$('#music-progress').oninput=e=>seekMusic(+e.target.value);$('#music-volume').value=musicPlayer.volume;$('#music-volume').oninput=e=>{musicPlayer.volume=+e.target.value;if(window.syntheticGain)syntheticGain.gain.value=musicPlayer.volume*.08};$('#music-restart').onclick=()=>seekMusic(0);$('#music-next').onclick=()=>{seekMusic(0);toast('当前为单曲示例，已重新开始')};$('#music-favorite').onclick=()=>{musicPlayer.favorite=!musicPlayer.favorite;storage.setItem('music-favorite',String(musicPlayer.favorite));updateMusicUI()};$('#music-more').onclick=()=>toast('封面来自参考图 · 当前模拟播放进度，未加载原曲音频');$('#music-lyrics').onclick=()=>toast('此示例暂未提供歌词');$('#music-output').onclick=()=>toast(window.musicCtx&&musicCtx.state==='running'?'正在输出模拟合成音效':'未加载原曲音频，可在 Radio 中试听合成音效');$('#music-queue').onclick=()=>showMusicPlaylist('华语金曲');updateMusicUI();
 }
 function toggleSyntheticAudio(){
@@ -765,7 +748,8 @@ function toggleSyntheticAudio(){
 function updateMusicUI(){
  const position=musicPosition();if(musicPlayer.playing&&position>=exampleTrack.duration){musicPlayer.position=exampleTrack.duration;musicPlayer.playing=false;if(window.musicCtx)musicCtx.suspend();storage.setItem('music-position',String(musicPlayer.position))}
  if($('#music-progress'))$('#music-progress').value=position;if($('#music-elapsed'))$('#music-elapsed').textContent=formatMusicTime(position);if($('#music-remaining'))$('#music-remaining').textContent='−'+formatMusicTime(exampleTrack.duration-position);
- for(const selector of ['#music-play','#music-mini-play'])if($(selector)){$(selector).textContent=musicPlayer.playing?'Ⅱ':'▶';$(selector).setAttribute('aria-label',musicPlayer.playing?'暂停歌曲':'播放歌曲')}
+ for(const selector of ['#music-play','#music-mini-play'])if($(selector)){$(selector).innerHTML=musicTransportIcon(musicPlayer.playing?'pause':'play');$(selector).setAttribute('aria-label',musicPlayer.playing?'暂停歌曲':'播放歌曲')}
+ if($('#music-next'))$('#music-next').innerHTML=musicTransportIcon('next');if($('#music-restart'))$('#music-restart').innerHTML=musicTransportIcon('previous');if($('#music-mini-next'))$('#music-mini-next').innerHTML=musicTransportIcon('next');
  if($('#music-favorite')){$('#music-favorite').textContent=musicPlayer.favorite?'★':'☆';$('#music-favorite').setAttribute('aria-pressed',String(musicPlayer.favorite))}
  const island=$('#island-lock'),playing=musicPlayer.playing&&!phoneLocked;island.classList.toggle('music-island',playing);if(playing&&!island.querySelector('.island-album'))island.innerHTML='<span class="island-album">'+albumCover()+'</span><span class="island-equalizer"><i></i><i></i><i></i><i></i><i></i></span>';else if(!playing&&island.firstChild)island.replaceChildren();island.setAttribute('aria-label',playing?'打开正在播放的音乐':'锁定手机屏幕');island.title=playing?'Kiss Goodbye · 点击打开播放器':'点击灵动岛锁屏';
 }
@@ -774,3 +758,96 @@ const physicalPower=document.createElement('button');physicalPower.id='phone-pow
 setInterval(updateMusicUI,250);
 const openBeforeV7=openApp;
 openApp=function(name){view.classList.remove('wechat-app');if(name==='天气')return showWeatherCity('chicago');if(name==='日历')return showCalendar();if(name==='电话')return showPhone('Calls');if(name==='音乐')return showMusicLibrary();if(name==='微信')return showWeChat();openBeforeV7(name)};
+
+// 聊天引擎只通过此接口操作已有存储，避免复制或清空旧聊天。
+function appendMessageBubble(message){const p=document.createElement('p');p.className='bubble '+(message.direction==='out'?'sent':'received');p.textContent=message.text;if(message.id)p.dataset.messageId=message.id;$('#messages').append(p)}
+function appendWeChatBubble(message,contact){const row=document.createElement('div');row.className='wechat-chat-row'+(message.out?' outgoing':'');if(message.id)row.dataset.messageId=message.id;const avatar=document.createElement('span');avatar.className='wechat-thread-avatar';avatar.innerHTML=message.out?petAvatar(0):wechatAvatar(contact);const text=document.createElement('p');text.className='bubble '+(message.out?'sent':'received');text.textContent=message.text;row.append(avatar,text);$('#wx-history').append(row)}
+function renderChatTyping(){
+ const app=view.dataset.chatApp,id=view.dataset.chatContact;let indicator=$('#chat-typing-status');if(!app||!id)return;
+ if(!indicator){indicator=document.createElement('div');indicator.id='chat-typing-status';indicator.className='chat-typing-status';indicator.setAttribute('role','status');indicator.setAttribute('aria-live','polite');const history=$(app==='messages'?'#messages':'#wx-history');history?.insertAdjacentElement('afterend',indicator)}
+ const typing=window.PhoneChatEngine?.isTyping(app,id)||false;indicator.hidden=!typing;indicator.textContent=typing?'对方正在输入…':'';
+}
+window.PhoneChatAdapters={
+ contacts:app=>app==='messages'?messageContacts:wechatPeople,
+ active:()=>!phoneLocked&&view.classList.contains('open')&&view.dataset.chatApp?{app:view.dataset.chatApp,id:view.dataset.chatContact}:null,
+ isLocked:()=>phoneLocked,
+ requestUnlock:showPasscode,
+ icon:app=>iosIcon(app==='messages'?'信息':'微信'),
+ hasMessage:(app,id,messageId)=>(app==='messages'?messageThreads[id]:wechatThreads[id])?.some(m=>m.id===messageId),
+ receive:(app,id,text,messageId)=>{
+  const at=new Date().toISOString();const raw=app==='messages'?{id:messageId,direction:'in',text,at}:{id:messageId,out:false,text,at};
+  if(app==='messages'){(messageThreads[id]??=[]).push(raw);saveMessageThreads()}else{(wechatThreads[id]??=[]).push(raw);storage.setItem('wechat-threads-v2',JSON.stringify(wechatThreads))}return raw;
+ },
+ openChat:(app,id)=>{view.classList.remove('wechat-app');if(app==='messages'){messagesFilterUnread=false;showMessageChat(id)}else showWeChatConversation(id)},
+ seedUnread:(app,id)=>app==='messages'&&messageContacts.find(c=>c.id===id)?.unread&&!readContacts.includes(id)?1:0,
+ legacyRead:(app,id)=>{if(app==='messages'&&!readContacts.includes(id)){readContacts.push(id);storage.setItem('message-read',JSON.stringify(readContacts))}},
+ mountPanelLauncher:button=>$('.phone-wrap').append(button)
+};
+document.addEventListener('phone-chat-update',event=>{
+ const detail=event.detail,active=window.PhoneChatAdapters.active();
+ if(active&&active.app===detail.app&&active.id===detail.id){
+  if(detail.type==='incoming'){
+   const history=$(active.app==='messages'?'#messages':'#wx-history');const nearBottom=history.scrollHeight-history.scrollTop-history.clientHeight<70;
+   if(active.app==='messages')appendMessageBubble(detail.message);else appendWeChatBubble(detail.message,wechatPeople.find(c=>c.id===active.id));
+   if(nearBottom)history.scrollTop=history.scrollHeight;
+  }renderChatTyping();
+ }else if(detail.type==='incoming'&&view.classList.contains('open')&&!phoneLocked){
+  if(view.dataset.app==='信息列表'&&detail.app==='messages'){
+   const input=$('#messages-search'),query=input?.value||'',focused=document.activeElement===input;showMessageList();$('#messages-search').value=query;$('#messages-search').dispatchEvent(new Event('input'));if(focused)$('#messages-search').focus();
+  }else if(view.dataset.app==='微信新版'&&detail.app==='wechat'){
+   const tab=view.dataset.wechatTab||'微信',input=$('#wechat-query'),query=input?.value||'',focused=document.activeElement===input;showWeChat(tab);$('#wechat-query').value=query;$('#wechat-query').dispatchEvent(new Event('input'));if(focused)$('#wechat-query').focus();
+  }
+ }
+});
+
+// 上一级导航：应用根页才返回桌面；聊天、子设置、照片和音乐先返回它们的父页面。
+function navigateUp(){
+ if(phoneLocked){showPasscode();return}
+ if(!view.classList.contains('open'))return;
+ if($('.clock-sheet')){$('.clock-sheet').remove();return}
+ if($('.social-compose')){$('#weibo-compose-cancel')?.click();return}
+ if($('.simulated-call')){$('#end-simulated-call')?.click();return}
+ if(view.dataset.app==='编辑备忘录'){$('#notes-back')?.click();return}
+ if($('.phone-contact-detail')){showPhone('Contacts');return}
+ if($('.native-photo-viewer')){$('#photo-viewer-close')?.click();return}
+ if(view.dataset.app==='音乐播放器'){$('#music-dismiss')?.click();return}
+ if(view.dataset.app==='微信聊天'){$('#wx-back')?.click();return}
+ const back=$('#back');if(back&&typeof back.onclick==='function'&&back.onclick!==home){back.click();return}home();
+}
+let musicReturnView=()=>showMusicLibrary();
+function showNowPlaying(){
+ if(view.dataset.app!=='音乐播放器'||!view.classList.contains('open')){
+  const playlist=$('#playlist-name')?.textContent;const section=view.dataset.app==='音乐资料库'?$('.music-library-heading h1')?.textContent:null;
+  musicReturnView=playlist?()=>showMusicPlaylist(playlist):()=>showMusicLibrary(section||'Library');
+ }
+ renderNowPlaying();$('#music-dismiss').onclick=()=>musicReturnView();
+}
+// 触屏和鼠标共用手势。只有底部区域上滑 / 播放器顶部下滑才占用纵向触摸。
+function resetPhoneDrag(){view.style.transform='';view.style.opacity='';$('#lock-face').style.transform='';$('#lock-face').style.opacity=''}
+phoneScreen.addEventListener('pointerdown',event=>{
+ swipeConsumed=false;homeSwipe=null;if(event.button&&event.button!==0)return;
+ if(event.target.closest('.chat-dev-backdrop,#chat-notification'))return;
+ const rect=phoneScreen.getBoundingClientRect(),bottom=event.clientY>rect.bottom-43;
+ const player=view.classList.contains('open')&&view.dataset.app==='音乐播放器',fromTop=player&&event.clientY<rect.top+102;
+ if(phoneLocked){if($('#passcode-panel').hidden&&!event.target.closest('button,input,textarea'))homeSwipe={mode:'unlock',x:event.clientX,y:event.clientY,pointer:event.pointerId};return}
+ const desktopArea=event.pointerType==='mouse'&&!event.target.closest('input,textarea,select,a,.native-chat-history,.message-history,.library-grid,.library-search,.thread-list,#weibo-content,.clock-content,.music-library-scroll,.phone-app-content,.wechat-native-content,#calendar-body,.weather-city-content');
+ if(fromTop||bottom||desktopArea)homeSwipe={mode:fromTop?'dismiss':'back',x:event.clientX,y:event.clientY,pointer:event.pointerId};
+},{capture:true});
+phoneScreen.addEventListener('pointermove',event=>{
+ if(!homeSwipe||homeSwipe.pointer!==event.pointerId)return;
+ const distance=homeSwipe.mode==='dismiss'?event.clientY-homeSwipe.y:homeSwipe.y-event.clientY,dx=Math.abs(event.clientX-homeSwipe.x);
+ if(distance<8||distance<dx*1.25)return;homeSwipe.distance=distance;
+ if(homeSwipe.mode==='unlock'){$('#lock-face').style.transform='translateY('+(-Math.min(distance*.3,90))+'px)';$('#lock-face').style.opacity=String(Math.max(.35,1-distance/400))}
+ else if(view.classList.contains('open'))view.style.transform=homeSwipe.mode==='dismiss'?'translateY('+Math.min(distance*.55,150)+'px)':'translateY('+(-Math.min(distance*.2,55))+'px) scale('+Math.max(.94,1-distance*.0002)+')';
+ if(event.cancelable)event.preventDefault();
+},{capture:true});
+window.addEventListener('pointerup',event=>{
+ if(!homeSwipe||homeSwipe.pointer!==event.pointerId)return;const gesture=homeSwipe;homeSwipe=null;resetPhoneDrag();
+ const distance=gesture.mode==='dismiss'?event.clientY-gesture.y:gesture.y-event.clientY,dx=Math.abs(event.clientX-gesture.x);
+ if(distance>52&&distance>dx*1.25){if(gesture.mode==='unlock')showPasscode();else navigateUp();swipeConsumed=event.pointerType==='mouse';setTimeout(()=>swipeConsumed=false,350)}
+},true);
+window.addEventListener('pointercancel',()=>{homeSwipe=null;resetPhoneDrag()});
+phoneScreen.addEventListener('click',event=>{if(swipeConsumed){swipeConsumed=false;event.preventDefault();event.stopPropagation()}},true);
+function applyConfiguredAvatar(element,contact){element.style.background=contact.color||'#98adc4';element.textContent=contact.initial||contact.name.slice(0,1);if(contact.avatar){const image=document.createElement('img');image.src=contact.avatar;image.alt='';image.draggable=false;element.replaceChildren(image)}}
+function musicTransportIcon(type){const paths={play:'<path d="M8 4.5q-1-1-1 1v21q0 2 1 1l18-10q2-1.5 0-3z"/>',pause:'<rect x="6" y="4" width="7" height="24" rx="1.5"/><rect x="19" y="4" width="7" height="24" rx="1.5"/>',next:'<path d="M3 7v18l12-9zM16 7v18l12-9z"/>',previous:'<path d="M29 7v18l-12-9zM16 7v18L4 16z"/>'};return '<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">'+paths[type]+'</svg>'}
+function musicMiniPlayer(){return '<div class="music-mini"><button id="music-mini-open">'+albumCover()+'<span><b>Kiss Goodbye</b><small>Wang Leehom</small></span></button><button id="music-mini-play" class="mini-transport" aria-label="播放或暂停">'+musicTransportIcon('play')+'</button><button id="music-mini-next" class="mini-transport" aria-label="重新播放示例歌曲">'+musicTransportIcon('next')+'</button></div>'}
