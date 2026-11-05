@@ -15,7 +15,7 @@ window.PHONE_CHAT_STORIES = [
     initialMessages: [
       { id: 'invitation', out: false, text: '周末一起吃饭吗？我知道有一家新开的云南菜' }
     ],
-    typing: { characterMs: 65 },
+    typing: { characterMs: 165 },
     stages: [
       {
         id: 'dinner-and-gossip',
@@ -40,12 +40,39 @@ window.PHONE_CHAT_STORIES = [
         ]
       }
     ]
+  },
+  {
+    id: 'honey-home', app: 'wechat',
+    contact: { id: 'honey', name: '哈尼', pet: 1, scripted: true, seed: [] },
+    ui: { initialHint: '等待哈尼的新消息…', busyHint: '正在自动输入…', completeHint: '这段聊天已结束', typingLabel: '哈尼正在输入中……' },
+    typing: { characterMs: 165 },
+    initialMessages: [
+      { id: 'seed-1', out: false, text: '估计要晚20分钟到家，路上堵车' },
+      { id: 'seed-2', out: true, text: '好的，我也刚从办公室离开' },
+      { id: 'seed-3', out: false, text: '晚上想吃什么？我一会顺路去买菜' },
+      { id: 'seed-4', out: true, text: '烤牛排吧！好久没吃了' },
+      { id: 'seed-5', out: true, text: '要不我们直接在超市见面吧？' },
+      { id: 'seed-6', out: false, text: '也行，看看还有什么别的想吃的' },
+      { id: 'seed-7', out: true, text: '那一会见' }
+    ],
+    proactive: { afterUnlockMs: 12000, message: { id: 'arrival', out: false, text: '你到哪儿了？我刚停好车' }, readyHint: '轻点输入框，回复哈尼' },
+    stages: [{ id: 'meet-at-market', trigger: { type: 'inputTap' }, actions: [
+      { type: 'typeAndSend', message: { id: 'five-minutes', out: true, text: '还有5分钟，我刚出地铁站' } },
+      { type: 'keyboard', visible: false },
+      { type: 'wait', delayMs: [1000, 2000], typing: true },
+      { type: 'send', message: { id: 'wait-at-door', out: false, text: '好，那我在门口等你' } }
+    ] }]
   }
 ];
 // 普通聊天仍由原来的数据和自动回复引擎管理；剧情联系人明确关闭通用自动回复。
 for (const story of window.PHONE_CHAT_STORIES) {
-  if (!PHONE_CHAT_PRESETS.wechat.some(c => c.id === story.contact.id)) {
+  const existing = PHONE_CHAT_PRESETS.wechat.find(c => c.id === story.contact.id);
+  if (existing) Object.assign(existing, story.contact);
+  else {
     PHONE_CHAT_PRESETS.wechat.push({ ...story.contact, seed: story.initialMessages.map(m => ({ ...m })) });
   }
   PHONE_CHAT_PRESETS.replies.wechat[story.contact.id] = { enabled: false, rules: [], fallback: [] };
 }
+
+// 哈尼的主动消息由剧情执行器单独安排，避免旧关键词/主动规则打断剧情。
+PHONE_CHAT_PRESETS.proactive.rules = PHONE_CHAT_PRESETS.proactive.rules.filter(rule => !(rule.app === 'wechat' && rule.contactId === 'honey'));

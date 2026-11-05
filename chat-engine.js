@@ -75,10 +75,11 @@
     if(adapters.isLocked()){deferredChat={app,id};adapters.requestUnlock();return}
     adapters.openChat(app,id);
   }
-  function receive(app,id,text,messageId=nextId()) {
-    if(!contact(app,id)||contact(app,id).scripted||typeof text!=='string'||!text.trim())return false;
+  function receive(app,id,text,messageId=nextId(),storyMessage=null) {
+    if(!contact(app,id)||(contact(app,id).scripted&&!storyMessage)||typeof text!=='string'||!text.trim())return false;
     if(adapters.hasMessage(app,id,messageId))return false;
     const message=adapters.receive(app,id,text.slice(0,2000),messageId);
+    if(storyMessage){Object.assign(message,storyMessage);storage.setItem('wechat-threads-v2',JSON.stringify(wechatThreads))}
     if(active(app,id)){unreadCounts[keyFor(app,id)]=0;adapters.legacyRead(app,id)}else unreadCounts[keyFor(app,id)]=count(app,id)+1;
     saveCounts();updateBadges();emit(app,id,'incoming',{message});
     if(!active(app,id))notify(app,id,message.text);
@@ -156,6 +157,6 @@
   },true);
   const launcher=document.createElement('button');launcher.id='chat-test-launcher';launcher.className='chat-test-launcher';launcher.textContent='聊天开发测试';launcher.onclick=openPanel;adapters.mountPanelLauncher(launcher);
   jobs=jobs.filter(job=>job&&typeof job.id==='string'&&contact(job.app,job.contactId)&&!contact(job.app,job.contactId).scripted&&typeof job.text==='string'&&Number.isFinite(job.dueAt)&&(job.kind!=='reply'||options.autoReply)&&(job.kind!=='proactive'||(options.proactive&&presets.proactive?.enabled))&&!adapters.hasMessage(job.app,job.contactId,job.id));saveJobs();
-  window.PhoneChatEngine={afterUserSend,markRead,unread:count,total,isTyping,onUnlock,receive,sendManual,openChat,setOptions,options:()=>({...options}),openPanel,closePanel,pending:()=>jobs.map(job=>({...job}))};
+  window.PhoneChatEngine={receiveStory:(id,message)=>contact('wechat',id)?.scripted?receive('wechat',id,message.text,message.id,message):false,afterUserSend,markRead,unread:count,total,isTyping,onUnlock,receive,sendManual,openChat,setOptions,options:()=>({...options}),openPanel,closePanel,pending:()=>jobs.map(job=>({...job}))};
   updateBadges();jobs.forEach(arm);
 })();

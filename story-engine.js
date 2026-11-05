@@ -48,14 +48,14 @@
     const input = document.querySelector('#wx-input'); if (!input) return;
     const ui = state.definition.ui || {};
     input.readOnly = true; input.inputMode = 'none'; input.setAttribute('inputmode','none'); input.autocomplete = 'off'; input.value = state.draft;
-    input.placeholder = state.status === 'complete' ? ui.completeHint || '这段聊天已结束' : state.status === 'running' ? ui.busyHint || '正在自动输入…' : state.stageIndex ? ui.nextHint || '轻点继续回复' : ui.initialHint || '轻点输入框开始';
+    input.placeholder = state.status === 'complete' ? ui.completeHint || '这段聊天已结束' : state.status === 'running' ? ui.busyHint || '正在自动输入…' : state.stageIndex ? ui.nextHint || '轻点继续回复' : (state.ready && state.definition.proactive ? state.definition.proactive.readyHint : ui.initialHint) || '轻点输入框开始';
     const keyboard = document.querySelector('#story-keyboard');
     if (keyboard) keyboard.hidden = !(state.keyboard && visible(state));
     view.classList.toggle('story-keyboard-visible', !!(state.keyboard && visible(state)));
     const candidate = document.querySelector('#story-candidate'); if (candidate) candidate.textContent = state.draft ? [...state.draft].slice(-5).join('') : '自动输入';
     const title = document.querySelector('#wechat-chat-name');
     if (title) { title.textContent = state.typing && visible(state) ? ui.typingLabel || state.definition.contact.name + '正在输入中……' : state.definition.contact.name; title.setAttribute('aria-live','polite'); }
-    const send = document.querySelector('#wx-form button[type=submit]'); if (send) send.disabled = state.status !== 'waiting';
+    const send = document.querySelector('#wx-form button[type=submit]'); if (send) send.disabled = state.status !== 'waiting' || !state.ready;
     view.dataset.storyStatus = state.status;
     updateTestPanel();
   }
@@ -117,7 +117,7 @@
     } else { console.warn('未识别的剧情动作：',action.type);advance(state); }
   }
   function trigger(id,event={type:'inputTap'}) {
-    const story=findStory(id),state=story&&states.get(story.id);if(!state||state.status!=='waiting'||!visible(state))return false;
+    const story=findStory(id),state=story&&states.get(story.id);if(!state||!state.ready||state.status!=='waiting'||!visible(state))return false;
     const condition=story.stages[state.stageIndex]?.trigger;
     if(condition?.type!==event.type||(condition.messageId&&condition.messageId!==event.messageId))return false;
     // 在任何计时器启动前立即锁住触发，连续点击不会安排第二条执行链。
@@ -139,32 +139,46 @@
   }
   function reset(id,refresh=true) {
     const story=findStory(id);if(!story)return false;
-    const old=states.get(story.id);if(old){clearTimeout(old.timer);old.continuation=null;}
-    const state={definition:story,revision:++revision,status:'waiting',stageIndex:0,actionIndex:0,characterIndex:0,draft:'',keyboard:false,typing:false,timer:null,continuation:null,remaining:0,scheduledAt:0};
+    const old=states.get(story.id);if(old){clearTimeout(old.timer);clearTimeout(old.proactiveTimer);old.continuation=null;}
+    const state={ready:!story.proactive,proactiveTimer:null,definition:story,revision:++revision,status:'waiting',stageIndex:0,actionIndex:0,characterIndex:0,draft:'',keyboard:false,typing:false,timer:null,continuation:null,remaining:0,scheduledAt:0};
     states.set(story.id,state);wechatThreads[story.contact.id]=[];
-    story.initialMessages.forEach(message=>wechatThreads[story.contact.id].push(messageFrom(state,message)));persist();
+    story.initialMessages.forEach((message,index)=>{const raw=messageFrom(state,message);raw.at=new Date(Date.now()-3600000+(index-story.initialMessages.length)*60000).toISOString();wechatThreads[story.contact.id].push(raw)});persist();
     PhoneChatEngine.markRead('wechat',story.contact.id);
     if(refresh){const active=PhoneChatAdapters.active();if(active?.app==='wechat'&&active.id===story.contact.id){originalOpenConversation(story.contact.id);mount(state)}else if(view.classList.contains('open')&&view.dataset.app==='微信新版'){showWeChat(view.dataset.wechatTab||'微信')}}
-    updateTestPanel();return true;
+    armProactive(state);updateTestPanel();return true;
   }
+
+  function deliverProactive(state) {
+    if(!current(state)||state.ready)return false;
+    clearTimeout(state.proactiveTimer);state.proactiveTimer=null;
+    const message=messageFrom(state,state.definition.proactive.message);
+    state.ready=true;
+    PhoneChatEngine.receiveStory(state.definition.contact.id,message);
+    render(state);scrollToLatest();return true;
+  }
+  function armProactive(state) {
+    if(!state.definition.proactive||state.ready||state.proactiveTimer!==null||PhoneChatAdapters.isLocked())return;
+    state.proactiveTimer=setTimeout(()=>deliverProactive(state),randomDelay(state.definition.proactive.afterUnlockMs));
+  }
+  document.addEventListener('phone-unlocked',()=>states.forEach(armProactive));
   function pauseActive(){states.forEach(pause)}
   function resumeActive(){states.forEach(resume)}
   showWeChatConversation=function(id='assistant') {
     pauseActive();originalOpenConversation(id);const story=findStory(id);if(story)mount(states.get(story.id));
   };
-  function snapshot(id){const story=findStory(id),s=story&&states.get(story.id);return s?{storyId:story.id,contactId:story.contact.id,status:s.status,stageIndex:s.stageIndex,actionIndex:s.actionIndex,draft:s.draft,keyboard:s.keyboard,typing:s.typing,paused:s.status==='running'&&s.timer===null,messageCount:wechatThreads[story.contact.id].length}:null}
-  function updateTestPanel(){const status=document.querySelector('#story-test-status'),select=document.querySelector('#story-test-select');if(status&&select){const s=snapshot(select.value);status.textContent=s?({waiting:'等待点击输入框',running:'执行中（离开聊天会暂停）',complete:'剧情已完成'})[s.status]:''}}
+  function snapshot(id){const story=findStory(id),s=story&&states.get(story.id);return s?{storyId:story.id,contactId:story.contact.id,status:s.status,stageIndex:s.stageIndex,actionIndex:s.actionIndex,draft:s.draft,keyboard:s.keyboard,typing:s.typing,paused:s.status==='running'&&s.timer===null,ready:s.ready,messageCount:wechatThreads[story.contact.id].length}:null}
+  function updateTestPanel(){const status=document.querySelector('#story-test-status'),select=document.querySelector('#story-test-select');if(status&&select){const s=snapshot(select.value);status.textContent=s&&!s.ready?'等待主动来信':s?({waiting:'等待点击输入框',running:'执行中（离开聊天会暂停）',complete:'剧情已完成'})[s.status]:''}}
   document.addEventListener('phone-chat-panel-open',event=>{
     pauseActive();const host=event.detail.panel;const section=document.createElement('section');section.className='story-test-controls';
     const title=document.createElement('h3');title.textContent='剧情测试';const select=document.createElement('select');select.id='story-test-select';select.setAttribute('aria-label','选择剧情');definitions.forEach(story=>{const option=document.createElement('option');option.value=story.id;option.textContent=story.contact.name;select.append(option)});
-    const status=document.createElement('p');status.id='story-test-status';status.setAttribute('role','status');const button=document.createElement('button');button.id='story-reset';button.type='button';button.textContent='重置选中剧情';button.onclick=()=>{reset(select.value);updateTestPanel()};section.append(title,select,status,button);host.append(section);select.onchange=updateTestPanel;updateTestPanel();
+    const status=document.createElement('p');status.id='story-test-status';status.setAttribute('role','status');const button=document.createElement('button');button.id='story-reset';button.type='button';button.textContent='重置选中剧情';button.onclick=()=>{reset(select.value);updateTestPanel()};const incoming=document.createElement('button');incoming.id='story-incoming';incoming.textContent='立即触发剧情来信';incoming.onclick=()=>{const story=findStory(select.value),state=story&&states.get(story.id);if(state?.definition.proactive)deliverProactive(state);else status.textContent='此剧情没有主动来信'};section.append(title,select,status,button,incoming);host.append(section);select.onchange=updateTestPanel;updateTestPanel();
   });
   document.addEventListener('phone-chat-panel-close',resumeActive);
   document.addEventListener('phone-locked',pauseActive);
   document.addEventListener('visibilitychange',()=>document.hidden?pauseActive():resumeActive());
   document.addEventListener('phone-story-trigger',event=>trigger(event.detail.contactId||event.detail.storyId,event.detail));
   view.addEventListener('click',event=>{const row=event.target.closest('.wechat-chat-row[data-story-step]');if(row&&view.dataset.storyId)trigger(view.dataset.storyId,{type:'messageTap',messageId:row.dataset.storyStep})});
-  window.PhoneStoryChat={trigger,reset,pauseActive,state:snapshot,open:id=>{const story=findStory(id);if(story)PhoneChatEngine.openChat('wechat',story.contact.id)},
+  window.PhoneStoryChat={deliverProactive:id=>{const story=findStory(id);return story?deliverProactive(states.get(story.id)):false},trigger,reset,pauseActive,state:snapshot,open:id=>{const story=findStory(id);if(story)PhoneChatEngine.openChat('wechat',story.contact.id)},
     sendSticker:(id,source,alt='表情包',out=true)=>{const story=findStory(id);if(!story||!ChatMessageRenderer.assetImageURL(source))return false;append(states.get(story.id),{id:'sticker-'+Date.now()+'-'+Math.random().toString(36).slice(2),type:'sticker',src:source,alt,out,text:'[表情包]'});return true;}
   };
   // 只有剧情联系人在刷新时重置；普通聊天、备忘录及所有其它数据保持不动。
