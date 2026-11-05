@@ -63,8 +63,12 @@ const wechatConversationBeforeStyle=showWeChatConversation;
 showWeChatConversation=function(id='assistant'){
  wechatConversationBeforeStyle(id);
  if(view.dataset.app!=='微信聊天')return;
- $('#wx-back').innerHTML='‹';$('#wx-back').setAttribute('aria-label','返回微信');
+ $('#wx-back').innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4-8 8 8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';$('#wx-back').setAttribute('aria-label','返回微信');
  const form=$('#wx-form');
+ const more=document.querySelector('.wechat-chat-title>span');more.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>';
+ const input=$('#wx-input'),wrap=document.createElement('div');wrap.className='wx-input-wrap';input.before(wrap);wrap.append(input);
+ const mic=document.createElement('span');mic.className='wx-input-mic';mic.setAttribute('aria-hidden','true');mic.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11v2a6 6 0 0 0 12 0v-2M12 19v3m-3 0h6"/></svg>';wrap.append(mic);
+
  for(const [icon,label] of [['voice','语音'],['smile','表情'],['plus','更多']]){
   const button=document.createElement('button');button.type='button';button.className='wx-composer-tool wx-'+icon;button.innerHTML=wechatLineIcon(icon);button.setAttribute('aria-label',label);button.onclick=()=>toast(label+'功能暂未配置，仍可使用文字聊天');
   if(icon==='voice')form.prepend(button);else form.insertBefore(button,form.querySelector('[type=submit]'));

@@ -6,11 +6,11 @@ window.PHONE_CHAT_STORIES = [
     app: 'wechat',
     contact: { id: 'story-wuxiao', name: '五小', pet: 1, scripted: true, seed: [] },
     ui: {
-      initialHint: '轻点输入框，回复五小',
-      busyHint: '正在自动输入…',
-      nextHint: '轻点输入框，继续回复',
-      completeHint: '这段聊天已结束',
-      typingLabel: '五小正在输入中……'
+      initialHint: '轻点输入框回复',
+      busyHint: '轻点输入框回复',
+      nextHint: '轻点输入框回复',
+      completeHint: '轻点输入框回复',
+      typingLabel: '正在输入中'
     },
     initialMessages: [
       { id: 'invitation', out: false, text: '周末一起吃饭吗？我知道有一家新开的云南菜' }
@@ -21,9 +21,9 @@ window.PHONE_CHAT_STORIES = [
         id: 'dinner-and-gossip',
         trigger: { type: 'inputTap' },
         actions: [
-          { type: 'typeAndSend', message: { id: 'user-dinner', out: true, text: '好呀，晚餐么？周五还是周六呀？' } },
+          { type: 'typeDraft', message: { id: 'user-dinner', out: true, text: '好呀，晚餐么？周五还是周六呀？' } },
           { type: 'wait', delayMs: [500, 1000] },
-          { type: 'typeAndSend', message: { id: 'user-gossip', out: true, text: '刚好有八卦想要跟你分享' } },
+          { type: 'typeDraft', message: { id: 'user-gossip', out: true, text: '刚好有八卦想要跟你分享' } },
           { type: 'keyboard', visible: false },
           { type: 'wait', delayMs: [1000, 3000], typing: true },
           { type: 'send', message: { id: 'reply-time', out: false, text: '周五下班后吧，7点怎么样？' } },
@@ -35,7 +35,7 @@ window.PHONE_CHAT_STORIES = [
         id: 'confirm-friday',
         trigger: { type: 'inputTap' },
         actions: [
-          { type: 'typeAndSend', message: { id: 'user-confirm', out: true, text: '没问题，那周五7点见' } },
+          { type: 'typeDraft', message: { id: 'user-confirm', out: true, text: '没问题，那周五7点见' } },
           { type: 'keyboard', visible: false }
         ]
       }
@@ -44,8 +44,9 @@ window.PHONE_CHAT_STORIES = [
   {
     id: 'honey-home', app: 'wechat',
     contact: { id: 'honey', name: '哈尼', pet: 1, scripted: true, seed: [] },
-    ui: { initialHint: '等待哈尼的新消息…', busyHint: '正在自动输入…', completeHint: '这段聊天已结束', typingLabel: '哈尼正在输入中……' },
+    ui: { initialHint: '轻点输入框回复', busyHint: '轻点输入框回复', completeHint: '轻点输入框回复', typingLabel: '正在输入中' },
     typing: { characterMs: 165 },
+    initialTimeLabel: '17:48',
     initialMessages: [
       { id: 'seed-1', out: false, text: '估计要晚20分钟到家，路上堵车' },
       { id: 'seed-2', out: true, text: '好的，我也刚从办公室离开' },
@@ -55,9 +56,9 @@ window.PHONE_CHAT_STORIES = [
       { id: 'seed-6', out: false, text: '也行，看看还有什么别的想吃的' },
       { id: 'seed-7', out: true, text: '那一会见' }
     ],
-    proactive: { afterUnlockMs: 12000, message: { id: 'arrival', out: false, text: '你到哪儿了？我刚停好车' }, readyHint: '轻点输入框，回复哈尼' },
+    proactive: { afterUnlockMs: 12000, message: { id: 'arrival', out: false, timeLabel: '18:15', text: '你到哪儿了？我刚停好车' }, readyHint: '轻点输入框回复' },
     stages: [{ id: 'meet-at-market', trigger: { type: 'inputTap' }, actions: [
-      { type: 'typeAndSend', message: { id: 'five-minutes', out: true, text: '还有5分钟，我刚出地铁站' } },
+      { type: 'typeDraft', message: { id: 'five-minutes', out: true, text: '还有5分钟，我刚出地铁站' } },
       { type: 'keyboard', visible: false },
       { type: 'wait', delayMs: [1000, 2000], typing: true },
       { type: 'send', message: { id: 'wait-at-door', out: false, text: '好，那我在门口等你' } }

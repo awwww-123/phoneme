@@ -35,11 +35,11 @@
   }
   function keyboardHTML() {
     const key = value => '<span class="story-key">' + value + '</span>';
-    return '<div class="story-keyboard-candidates"><span>拼音</span><b id="story-candidate">自动输入</b><small>简体拼音</small></div>' +
-      '<div class="story-keyboard-row">' + [...'qwertyuiop'].map(key).join('') + '</div>' +
-      '<div class="story-keyboard-row middle">' + [...'asdfghjkl'].map(key).join('') + '</div>' +
-      '<div class="story-keyboard-row"><span class="story-key special">⇧</span>' + [...'zxcvbnm'].map(key).join('') + '<span class="story-key special">⌫</span></div>' +
-      '<div class="story-keyboard-row bottom"><span class="story-key special">123</span><span class="story-key special">🌐</span><span class="story-key space">空格</span><span class="story-key return">发送</span></div><div class="story-keyboard-caption"><span>◉</span><span>模拟键盘 · 自动输入</span><span>♩</span></div>';
+    return '<div class="story-keyboard-candidates"><span>拼音</span><b id="story-candidate" aria-hidden="true"></b><small>简体拼音</small></div>' +
+      '<div class="story-keyboard-row">' + [...'QWERTYUIOP'].map(key).join('') + '</div>' +
+      '<div class="story-keyboard-row middle">' + [...'ASDFGHJKL'].map(key).join('') + '</div>' +
+      '<div class="story-keyboard-row"><span class="story-key special">⇧</span>' + [...'ZXCVBNM'].map(key).join('') + '<span class="story-key special">⌫</span></div>' +
+      '<div class="story-keyboard-row bottom"><span class="story-key special">123</span><span class="story-key special"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M7 14q5 6 10 0M8 9h1m6 0h1"/></svg></span><span class="story-key space">空格</span><button type="button" class="story-key return" id="story-keyboard-send" disabled>发送</button></div><div class="story-keyboard-caption"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6h14M5 18h14"/></svg></span><span></span><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11v2a6 6 0 0 0 12 0v-2M12 19v3m-3 0h6"/></svg></span></div>';
   }
   function render(state) {
     if (!current(state)) return;
@@ -47,15 +47,16 @@
     if (active?.app !== 'wechat' || active.id !== state.definition.contact.id) return;
     const input = document.querySelector('#wx-input'); if (!input) return;
     const ui = state.definition.ui || {};
-    input.readOnly = true; input.inputMode = 'none'; input.setAttribute('inputmode','none'); input.autocomplete = 'off'; input.value = state.draft;
-    input.placeholder = state.status === 'complete' ? ui.completeHint || '这段聊天已结束' : state.status === 'running' ? ui.busyHint || '正在自动输入…' : state.stageIndex ? ui.nextHint || '轻点继续回复' : (state.ready && state.definition.proactive ? state.definition.proactive.readyHint : ui.initialHint) || '轻点输入框开始';
+    input.readOnly = true; input.inputMode = 'none'; input.setAttribute('inputmode','none'); input.autocomplete = 'off'; input.value = state.draft; input.setSelectionRange(state.draft.length,state.draft.length); input.scrollLeft = input.scrollWidth;
+    input.placeholder = '轻点输入框回复';
     const keyboard = document.querySelector('#story-keyboard');
     if (keyboard) keyboard.hidden = !(state.keyboard && visible(state));
     view.classList.toggle('story-keyboard-visible', !!(state.keyboard && visible(state)));
-    const candidate = document.querySelector('#story-candidate'); if (candidate) candidate.textContent = state.draft ? [...state.draft].slice(-5).join('') : '自动输入';
+    const candidate = document.querySelector('#story-candidate'); if (candidate) candidate.textContent = '';
     const title = document.querySelector('#wechat-chat-name');
-    if (title) { title.textContent = state.typing && visible(state) ? ui.typingLabel || state.definition.contact.name + '正在输入中……' : state.definition.contact.name; title.setAttribute('aria-live','polite'); }
-    const send = document.querySelector('#wx-form button[type=submit]'); if (send) send.disabled = state.status !== 'waiting' || !state.ready;
+    if (title) { title.textContent = state.typing && visible(state) ? '正在输入中' : state.definition.contact.name; title.setAttribute('aria-live','polite'); }
+    const send = document.querySelector('#wx-form button[type=submit]'); if (send) send.disabled = state.status !== 'awaitingSend';
+    const keyboardSend = document.querySelector('#story-keyboard-send'); if(keyboardSend)keyboardSend.disabled = state.status !== 'awaitingSend';
     view.dataset.storyStatus = state.status;
     updateTestPanel();
   }
@@ -100,12 +101,12 @@
       return;
     }
     const action = stage.actions[state.actionIndex];
-    if (action.type === 'typeAndSend') {
+    if (action.type === 'typeDraft' || action.type === 'typeAndSend') {
       state.keyboard=true;state.typing=false;const characters=Array.from(action.message.text||'');
       if (state.characterIndex < characters.length) {
         state.characterIndex++;state.draft=characters.slice(0,state.characterIndex).join('');render(state);scrollToLatest();
         schedule(state,Math.max(15,Number(action.characterMs??state.definition.typing?.characterMs)||65),()=>run(state));
-      } else { append(state,action.message);state.draft='';state.characterIndex=0;render(state);advance(state); }
+      } else { state.status='awaitingSend';render(state);scrollToLatest(); }
     } else if (action.type === 'wait') {
       state.typing=!!action.typing;render(state);schedule(state,randomDelay(action.delayMs),()=>{state.typing=false;advance(state)});
     } else if (action.type === 'send') {
@@ -123,6 +124,13 @@
     // 在任何计时器启动前立即锁住触发，连续点击不会安排第二条执行链。
     state.status='running';state.actionIndex=0;state.characterIndex=0;state.draft='';render(state);run(state);return true;
   }
+  function sendDraft(state) {
+    if(!current(state)||state.status!=='awaitingSend'||!visible(state))return false;
+    const action=state.definition.stages[state.stageIndex]?.actions[state.actionIndex];
+    if(!action?.message||!state.draft)return false;
+    // 同步先锁住状态，表单和键盘发送键连续点击也只提交一次。
+    state.status='running';append(state,action.message);state.draft='';state.characterIndex=0;render(state);advance(state);return true;
+  }
   function mount(state) {
     if(!current(state))return;
     view.classList.add('story-chat');view.dataset.storyId=state.definition.id;
@@ -133,8 +141,9 @@
     input.addEventListener('pointerup',event=>{if(event.pointerType==='touch'){event.preventDefault();lastTouch=performance.now();trigger(state.definition.id)}});
     input.onclick=event=>{event.preventDefault();if(event.detail&&performance.now()-lastTouch<500)return;trigger(state.definition.id)};
     input.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();trigger(state.definition.id)}};
-    form.onsubmit=event=>{event.preventDefault();trigger(state.definition.id)};
+    form.onsubmit=event=>{event.preventDefault();sendDraft(state)};
     const keyboard=document.createElement('section');keyboard.id='story-keyboard';keyboard.className='story-keyboard';keyboard.setAttribute('role','group');keyboard.setAttribute('aria-label','模拟 iOS 中文拼音26键键盘，文字自动输入');keyboard.innerHTML=keyboardHTML();keyboard.hidden=true;form.insertAdjacentElement('afterend',keyboard);
+    keyboard.querySelector('#story-keyboard-send').onclick=()=>sendDraft(state);
     render(state);resume(state);scrollToLatest();
   }
   function reset(id,refresh=true) {
@@ -142,7 +151,7 @@
     const old=states.get(story.id);if(old){clearTimeout(old.timer);clearTimeout(old.proactiveTimer);old.continuation=null;}
     const state={ready:!story.proactive,proactiveTimer:null,definition:story,revision:++revision,status:'waiting',stageIndex:0,actionIndex:0,characterIndex:0,draft:'',keyboard:false,typing:false,timer:null,continuation:null,remaining:0,scheduledAt:0};
     states.set(story.id,state);wechatThreads[story.contact.id]=[];
-    story.initialMessages.forEach((message,index)=>{const raw=messageFrom(state,message);raw.at=new Date(Date.now()-3600000+(index-story.initialMessages.length)*60000).toISOString();wechatThreads[story.contact.id].push(raw)});persist();
+    story.initialMessages.forEach((message,index)=>{const raw=messageFrom(state,message);if(index===0&&story.initialTimeLabel)raw.timeLabel=story.initialTimeLabel;raw.at=new Date(Date.now()-3600000+(index-story.initialMessages.length)*60000).toISOString();wechatThreads[story.contact.id].push(raw)});persist();
     PhoneChatEngine.markRead('wechat',story.contact.id);
     if(refresh){const active=PhoneChatAdapters.active();if(active?.app==='wechat'&&active.id===story.contact.id){originalOpenConversation(story.contact.id);mount(state)}else if(view.classList.contains('open')&&view.dataset.app==='微信新版'){showWeChat(view.dataset.wechatTab||'微信')}}
     armProactive(state);updateTestPanel();return true;
@@ -167,7 +176,7 @@
     pauseActive();originalOpenConversation(id);const story=findStory(id);if(story)mount(states.get(story.id));
   };
   function snapshot(id){const story=findStory(id),s=story&&states.get(story.id);return s?{storyId:story.id,contactId:story.contact.id,status:s.status,stageIndex:s.stageIndex,actionIndex:s.actionIndex,draft:s.draft,keyboard:s.keyboard,typing:s.typing,paused:s.status==='running'&&s.timer===null,ready:s.ready,messageCount:wechatThreads[story.contact.id].length}:null}
-  function updateTestPanel(){const status=document.querySelector('#story-test-status'),select=document.querySelector('#story-test-select');if(status&&select){const s=snapshot(select.value);status.textContent=s&&!s.ready?'等待主动来信':s?({waiting:'等待点击输入框',running:'执行中（离开聊天会暂停）',complete:'剧情已完成'})[s.status]:''}}
+  function updateTestPanel(){const status=document.querySelector('#story-test-status'),select=document.querySelector('#story-test-select');if(status&&select){const s=snapshot(select.value);status.textContent=s&&!s.ready?'等待主动来信':s?({waiting:'等待点击输入框',running:'执行中（离开聊天会暂停）',awaitingSend:'文字已填好，等待点击发送',complete:'剧情已完成'})[s.status]:''}}
   document.addEventListener('phone-chat-panel-open',event=>{
     pauseActive();const host=event.detail.panel;const section=document.createElement('section');section.className='story-test-controls';
     const title=document.createElement('h3');title.textContent='剧情测试';const select=document.createElement('select');select.id='story-test-select';select.setAttribute('aria-label','选择剧情');definitions.forEach(story=>{const option=document.createElement('option');option.value=story.id;option.textContent=story.contact.name;select.append(option)});
@@ -181,6 +190,6 @@
   window.PhoneStoryChat={deliverProactive:id=>{const story=findStory(id);return story?deliverProactive(states.get(story.id)):false},trigger,reset,pauseActive,state:snapshot,open:id=>{const story=findStory(id);if(story)PhoneChatEngine.openChat('wechat',story.contact.id)},
     sendSticker:(id,source,alt='表情包',out=true)=>{const story=findStory(id);if(!story||!ChatMessageRenderer.assetImageURL(source))return false;append(states.get(story.id),{id:'sticker-'+Date.now()+'-'+Math.random().toString(36).slice(2),type:'sticker',src:source,alt,out,text:'[表情包]'});return true;}
   };
-  // 只有剧情联系人在刷新时重置；普通聊天、备忘录及所有其它数据保持不动。
+  // 剧情联系人初始化；普通聊天由 chat-session.js 在启动时恢复默认，其它应用不受影响。
   definitions.forEach(story=>reset(story.id,false));
 })();
