@@ -76,7 +76,7 @@
     adapters.openChat(app,id);
   }
   function receive(app,id,text,messageId=nextId()) {
-    if(!contact(app,id)||typeof text!=='string'||!text.trim())return false;
+    if(!contact(app,id)||contact(app,id).scripted||typeof text!=='string'||!text.trim())return false;
     if(adapters.hasMessage(app,id,messageId))return false;
     const message=adapters.receive(app,id,text.slice(0,2000),messageId);
     if(active(app,id)){unreadCounts[keyFor(app,id)]=0;adapters.legacyRead(app,id)}else unreadCounts[keyFor(app,id)]=count(app,id)+1;
@@ -93,7 +93,7 @@
   }
   function arm(job) { timers.set(job.id,setTimeout(()=>finishJob(job.id),Math.max(0,job.dueAt-Date.now()))); }
   function enqueue(app,id,text,delayMs,kind='manual') {
-    if(!contact(app,id)||typeof text!=='string'||!text.trim())return null;
+    if(!contact(app,id)||contact(app,id).scripted||typeof text!=='string'||!text.trim())return null;
     const job={id:nextId(),app,contactId:id,text:text.slice(0,2000),dueAt:Date.now()+Math.max(0,delayMs),kind};
     jobs.push(job);saveJobs();arm(job);emit(app,id,'typing');return job.id;
   }
@@ -109,7 +109,7 @@
     const key=keyFor(app,id)+':'+ruleIndex,index=Math.max(0,Number(counters[key])||0);counters[key]=index+1;storage.setItem(keys.counters,JSON.stringify(counters));return responses[index%responses.length];
   }
   function afterUserSend(app,id,text) {
-    if(!options.autoReply||!contact(app,id))return;
+    if(!options.autoReply||!contact(app,id)||contact(app,id).scripted)return;
     const reply=chooseReply(app,id,text);if(!reply)return;
     const min=Math.max(1000,Math.min(3000,Number(presets.replyDelay?.minMs)||1000));
     const max=Math.max(min,Math.min(3000,Number(presets.replyDelay?.maxMs)||3000));
@@ -130,7 +130,7 @@
     if(!options.autoReply)cancelJobs(j=>j.kind==='reply');if(!options.proactive)cancelJobs(j=>j.kind==='proactive');else if(!adapters.isLocked())onUnlock();
   }
   function sendManual(app,id,text,delay=0) {return enqueue(app,id,text,Math.min(30000,Math.max(0,Number(delay)||0)),'manual');}
-  function closePanel() { panel?.remove();panel=null;document.querySelector('#chat-test-launcher')?.focus(); }
+  function closePanel() { panel?.remove();panel=null;document.querySelector('#chat-test-launcher')?.focus();document.dispatchEvent(new Event('phone-chat-panel-close')); }
   function openPanel() {
     if(adapters.isLocked()){adapters.requestUnlock();return}
     if(panel)return;
@@ -138,12 +138,12 @@
     document.querySelector('#screen').append(panel);panel.querySelector('#chat-test-close').onclick=closePanel;
     const app=panel.querySelector('#chat-test-app'),select=panel.querySelector('#chat-test-contact'),text=panel.querySelector('#chat-test-text');
     function fillText(){const id=select.value;const rule=(presets.proactive.rules||[]).find(r=>r.app===app.value&&r.contactId===id);text.value=rule?.texts?.[0]||presets.replies?.[app.value]?.[id]?.fallback?.[0]||'在吗？这是一条模拟消息。'}
-    function fillContacts(){select.replaceChildren();adapters.contacts(app.value).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;select.append(o)});fillText()}
+    function fillContacts(){select.replaceChildren();adapters.contacts(app.value).filter(c=>!c.scripted).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;select.append(o)});fillText()}
     fillContacts();app.onchange=fillContacts;select.onchange=fillText;
     panel.querySelector('#chat-test-form').onsubmit=event=>{event.preventDefault();const value=text.value.trim();if(!value)return;sendManual(app.value,select.value,value,Number(panel.querySelector('#chat-test-delay').value)*1000);panel.querySelector('#chat-test-result').textContent='已安排模拟消息；关闭面板查看通知或聊天。'};
     const auto=panel.querySelector('#chat-auto-replies'),proactive=panel.querySelector('#chat-proactive');auto.checked=!!options.autoReply;proactive.checked=!!options.proactive;auto.onchange=()=>setOptions({autoReply:auto.checked});proactive.onchange=()=>setOptions({proactive:proactive.checked});
     panel.querySelector('#chat-proactive-reset').onclick=()=>{scheduledRules=[];try{sessionStorage.removeItem(sessionKey)}catch{}cancelJobs(j=>j.kind==='proactive');onUnlock();panel.querySelector('#chat-test-result').textContent=options.proactive?'已重新安排，延迟见 chat-data.js。':'请先启用主动消息。'};
-    panel.addEventListener('click',event=>{if(event.target===panel)closePanel()});app.focus();
+    panel.addEventListener('click',event=>{if(event.target===panel)closePanel()});app.focus();document.dispatchEvent(new CustomEvent('phone-chat-panel-open',{detail:{panel:panel.querySelector('#chat-dev-panel')}}));
   }
   document.addEventListener('phone-locked',()=>{if(panel)closePanel()});
   document.addEventListener('keydown',event=>{
@@ -155,7 +155,7 @@
     }
   },true);
   const launcher=document.createElement('button');launcher.id='chat-test-launcher';launcher.className='chat-test-launcher';launcher.textContent='聊天开发测试';launcher.onclick=openPanel;adapters.mountPanelLauncher(launcher);
-  jobs=jobs.filter(job=>job&&typeof job.id==='string'&&contact(job.app,job.contactId)&&typeof job.text==='string'&&Number.isFinite(job.dueAt)&&(job.kind!=='reply'||options.autoReply)&&(job.kind!=='proactive'||(options.proactive&&presets.proactive?.enabled))&&!adapters.hasMessage(job.app,job.contactId,job.id));saveJobs();
+  jobs=jobs.filter(job=>job&&typeof job.id==='string'&&contact(job.app,job.contactId)&&!contact(job.app,job.contactId).scripted&&typeof job.text==='string'&&Number.isFinite(job.dueAt)&&(job.kind!=='reply'||options.autoReply)&&(job.kind!=='proactive'||(options.proactive&&presets.proactive?.enabled))&&!adapters.hasMessage(job.app,job.contactId,job.id));saveJobs();
   window.PhoneChatEngine={afterUserSend,markRead,unread:count,total,isTyping,onUnlock,receive,sendManual,openChat,setOptions,options:()=>({...options}),openPanel,closePanel,pending:()=>jobs.map(job=>({...job}))};
   updateBadges();jobs.forEach(arm);
 })();
